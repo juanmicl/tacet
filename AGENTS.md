@@ -78,7 +78,7 @@ Concrete goals, in order:
    found public code with the sign of the 147.55 term inverted).
 4. Record labeled IQ clips: 2–5 s blocks, cs8 format from HackRF
    (`hackrf_transfer -r file.cs8 -f <center> -s 20e6 -l 32 -g 32`),
-   ~100 MB per 5 s at 20 Msps. Label everything in the manifest.
+   ~200 MB per 5 s at 20 Msps. Label everything in the manifest.
 
 ## Repo conventions
 
