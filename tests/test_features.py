@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+from scipy import signal
 
 from tacet.loaders import cs8
 
@@ -102,6 +103,82 @@ def test_remove_dc_and_time_envelope():
     assert env.shape[0] == S.shape[1]
     # DC bins excluded -> envelope floor stays far below the tone peak
     assert env.max() > 1e3 * np.median(env)
+
+
+def test_occupied_bandwidth():
+    from tacet.dsp import features
+
+    fs = 1_000_000.0
+    n = 262_144
+    rng = np.random.default_rng(5)
+    # band-limited noise 100k..180k (80 kHz wide) + low floor
+    base = rng.standard_normal(n) + 1j * rng.standard_normal(n)
+    bb = signal.firwin(255, 50e3, fs=fs)          # real lowpass, 100 kHz wide
+    taps_t = np.arange(bb.size) / fs
+    bb = bb * np.exp(2j * np.pi * 140e3 * taps_t)  # analytic bandpass 90..190k
+    band = signal.lfilter(bb, 1.0, base)
+    x = (band + 1e-3 * base).astype(np.complex64)
+    f, p = features.welch_psd(x, fs, nfft=2048)
+    bw, f_lo, f_hi = features.occupied_bandwidth(f, p, percent=99.0)
+    assert 60e3 < bw < 130e3, f"bw {bw}"
+    assert f_lo > 60e3 and f_hi < 220e3
+
+
+def test_spectral_flatness_extremes():
+    from tacet.dsp import features
+
+    fs = 1_000_000.0
+    n = 131_072
+    t = np.arange(n) / fs
+    rng = np.random.default_rng(6)
+
+    _, p_white = features.welch_psd(
+        rng.standard_normal(n) + 1j * rng.standard_normal(n), fs)
+    assert features.spectral_flatness(p_white) > 0.5
+
+    _, p_tone = features.welch_psd(
+        np.exp(2j * np.pi * 2e5 * t), fs)
+    assert features.spectral_flatness(p_tone) < 1e-3
+
+    # DC robustness: huge DC spike must not change the tone result
+    _, p_dc = features.welch_psd(1e3 + np.exp(2j * np.pi * 2e5 * t), fs)
+    assert features.spectral_flatness(p_dc) < 1e-3
+
+
+def test_duty_cycle_and_bursts_consistency():
+    from tacet.dsp import features
+
+    fs = 1_000_000.0
+    nfft = 1024
+    per_burst = nfft * 10          # 10 FFT frames on
+    gap = nfft * 30                # 30 FFT frames off
+    reps = 40
+    rng = np.random.default_rng(7)
+    burst = (rng.standard_normal(per_burst) + 1j * rng.standard_normal(per_burst))
+    silence = 1e-4 * (
+        rng.standard_normal(gap) + 1j * rng.standard_normal(gap))
+    x = np.concatenate([np.concatenate([burst, silence]) for _ in range(reps)])
+    x = features.remove_dc(x).astype(np.complex64)
+
+    f, t, S = features.spectrogram(x, fs, nfft=nfft)
+    env = features.time_envelope(S)
+    duty = features.duty_cycle(env, threshold_rel_db=-35.0)
+    assert abs(duty - 0.25) < 0.05, f"duty {duty}"
+
+    bursts = features.burst_structure(env, t, threshold_rel_db=-35.0)
+    assert 30 <= len(bursts["bursts"]) <= 45
+    assert abs(bursts["mean_burst_s"] - 10 * nfft / fs) < 2 * nfft / fs
+
+
+def test_rail_fraction():
+    from tacet.dsp import features
+
+    clean = (np.random.default_rng(8).integers(-100, 100, 8192)
+             + 1j * np.random.default_rng(9).integers(-100, 100, 8192))
+    assert features.rail_fraction(clean) == 0.0
+    clipped = np.full(8192, 127 + 1j * 127, dtype=np.complex64)
+    x = np.concatenate([clean.astype(np.complex64), clipped])
+    assert 0.4 < features.rail_fraction(x) < 0.6
 
 
 if __name__ == "__main__":
