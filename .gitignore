@@ -17,3 +17,6 @@ data/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Superpowers SDD scratch
+.superpowers/
