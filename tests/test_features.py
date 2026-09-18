@@ -35,7 +35,6 @@ def test_cs8_odd_byte_count():
 
 def test_manifest_hackrf_gain_and_repo_root():
     from tacet.loaders import manifest as mm
-    import json as _json
 
     entry = {
         "id": "sig-0001",
@@ -62,6 +61,47 @@ def test_manifest_hackrf_gain_and_repo_root():
         (Path(tmp) / "manifest.schema.json").write_text(_schema, encoding="utf-8")
         root = mm._repo_root(start=Path(tmp) / "sub" / "dir")
         assert root == Path(tmp).resolve()  # walks up to pyproject.toml
+
+
+def test_spectral_helpers_frequency_axis():
+    from tacet.dsp import features
+
+    fs = 1_000_000.0
+    n = 65536
+    t = np.arange(n) / fs
+    tone_hz = 250_000.0  # +5 bins-scale offset inside the window
+    x = np.exp(2j * np.pi * tone_hz * t).astype(np.complex64)
+
+    f_spec, _, S = features.spectrogram(x, fs, nfft=1024)
+    peak_f = f_spec[int(np.argmax(S.mean(axis=1)))]
+    assert abs(peak_f - tone_hz) < 2_000.0, f"spec peak {peak_f}"
+
+    f_w, p = features.welch_psd(x, fs, nfft=1024)
+    peak_f = f_w[int(np.argmax(p))]
+    assert abs(peak_f - tone_hz) < 2_000.0, f"welch peak {peak_f}"
+
+    assert np.all(np.diff(f_spec) > 0)  # axis sorted ascending (fftshifted)
+
+
+def test_remove_dc_and_time_envelope():
+    from tacet.dsp import features
+
+    fs = 1_000_000.0
+    n = 65536
+    t = np.arange(n) / fs
+    rng = np.random.default_rng(5)
+    tone = np.exp(2j * np.pi * 1e5 * t).astype(np.complex64)
+    tone[n // 8:] = 0  # burst: tone only in 8 of 64 columns
+    noise = 1e-3 * (rng.standard_normal(n) + 1j * rng.standard_normal(n))
+    x = 500.0 + tone + noise.astype(np.complex64)  # big DC + burst + floor
+    y = features.remove_dc(x)
+    assert abs(np.mean(y)) < 1e-3
+
+    _, _, S = features.spectrogram(y, fs, nfft=1024)
+    env = features.time_envelope(S)
+    assert env.shape[0] == S.shape[1]
+    # DC bins excluded -> envelope floor stays far below the tone peak
+    assert env.max() > 1e3 * np.median(env)
 
 
 if __name__ == "__main__":
