@@ -9,6 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
+# Agent tooling local state
+.opencode/
+
 # Project data (recordings stay out of git; manifest + checksums are tracked)
 data/
 
