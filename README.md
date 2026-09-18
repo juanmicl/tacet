@@ -1,7 +1,11 @@
 # Tacet: Passive Drone Detection Layer
 
-[![tests](https://github.com/juanmicl/tacet/actions/workflows/tests.yml/badge.svg)](https://github.com/juanmicl/tacet/actions/workflows/tests.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![tests](https://img.shields.io/github/actions/workflow/status/juanmicl/tacet/tests.yml?style=for-the-badge&label=tests)](https://github.com/juanmicl/tacet/actions/workflows/tests.yml)
+[![Python](https://img.shields.io/badge/python-3.13%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+<!-- Enable on first PyPI release (check name availability first):
+[![PyPI](https://img.shields.io/pypi/v/tacet?style=for-the-badge)](https://pypi.org/project/tacet/)
+-->
 
 *Tacet*: in a musical score, it marks the instrument that stays silent. This
 is the sensor that never transmits.
