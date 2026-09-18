@@ -182,6 +182,26 @@ def test_keyboard_interrupt_cleans_up():
         assert "interrupted" in err.getvalue()
 
 
+def test_control_scenario_tx_off():
+    args = dict(scenario="control", freq_mhz=2440, duration_s=5.0,
+                lna=32, vga=32, power_mw=None, notes="tx-off control",
+                distance_m=None, env=None, los=None,
+                antenna="dual-band 2.4/5.8 SMA",
+                path="data/signature_capture/control/control_000.cs8",
+                sha256="ab" * 32, timestamp="2026-09-19T10:00:00+00:00")
+    entry = capture.build_entry(args)
+    from tacet.loaders import manifest as mm
+    mm.validate_entry(entry)   # must pass schema
+    assert entry["protocol"] == "noise"
+    # --power is rejected on the control scenario (no transmitter involved).
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err), \
+         contextlib.redirect_stdout(io.StringIO()):
+        rc = capture.main(["control", "--freq-mhz", "2440", "--power", "100"])
+    assert rc == 2
+    assert "--power" in err.getvalue()
+
+
 if __name__ == "__main__":
     import sys
 

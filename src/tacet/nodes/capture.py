@@ -27,17 +27,20 @@ PROTOCOL_BY_SCENARIO = {
     "o4-scan": "dji_o4",
     "o4-fixed": "dji_o4",
     "elrs-bench": "elrs",
+    "control": "noise",
 }
 BAND_BY_SCENARIO = {
     "o4-scan": "5.1/5.8 GHz",
     "o4-fixed": "5.1/5.8 GHz",
     "elrs-bench": "2.4 GHz ISM",
+    "control": "control",
 }
 
 SCENARIOS = {
     "o4-scan": "scan the 5.1/5.8 GHz bands for DJI O4 video bursts",
     "o4-fixed": "record one fixed DJI O4 center frequency",
     "elrs-bench": "bench capture of the ELRS control link (Boxer TX)",
+    "control": "TX-OFF control capture (protocol noise) for the session",
 }
 
 
@@ -78,13 +81,14 @@ def validate_power(power_mw: float | None) -> None:
 def build_center_hz(scenario: str, ns) -> float:
     """Center frequency (MHz) for a scenario from parsed args.
 
-    elrs-bench defaults to ELRS_DEFAULT_MHZ; o4-fixed requires --freq-mhz.
+    elrs-bench defaults to ELRS_DEFAULT_MHZ; o4-fixed and control require
+    --freq-mhz.
     """
     if ns.freq_mhz is not None:
         return float(ns.freq_mhz)
     if scenario == "elrs-bench":
         return float(ELRS_DEFAULT_MHZ)
-    raise ValueError("--freq-mhz is required for o4-fixed")
+    raise ValueError(f"--freq-mhz is required for {scenario}")
 
 
 def build_argv(center_hz: int, n_samples: int, lna: int, vga: int, path: str):
@@ -247,7 +251,7 @@ def main(argv=None) -> int:
     )
     parser.add_argument(
         "--freq-mhz", type=float, default=None,
-        help="center frequency in MHz (required for o4-fixed; "
+        help="center frequency in MHz (required for o4-fixed/control; "
              "default 2440 for elrs-bench)",
     )
     parser.add_argument("--duration-s", type=float, default=5.0)
