@@ -1,0 +1,25 @@
+[project]
+name = "umbra"
+version = "0.1.0"
+description = "Low-cost, receive-only drone detection for critical infrastructure"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Juan Miguel Contreras", email = "jmc@traceback.net" }]
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "scipy>=1.18.1",
+]
+
+[project.scripts]
+umbra = "umbra:main"
+
+[project.optional-dependencies]
+acquisition = ["pyadi-iio>=0.0.21"]
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"

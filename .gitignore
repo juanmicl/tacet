@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Project data (recordings stay out of git; manifest + checksums are tracked)
+data/
+
+# Jupyter
+.ipynb_checkpoints/
