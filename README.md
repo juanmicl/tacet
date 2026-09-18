@@ -59,7 +59,7 @@ Pluto+: `uv sync --extra acquisition`.
 flowchart LR
     RF[RF Signature Node<br/>HackRF / RTL-SDR<br/>2.4 GHz ELRS · 5.8 GHz OFDM] --> F((Fusion<br/>Tracker<br/>GNN + EKF/UKF))
     AC[Acoustic Node<br/>MEMS mic array + ESP32<br/>bearing + rotor harmonics] --> F
-    PR[Passive Radar<br/>Pluto+ (AD9363) coherent dual-RX, DVB-T illuminators<br/>range + Doppler + micro-Doppler] --> F
+    PR["Passive Radar<br/>Pluto+ (AD9363) coherent dual-RX, DVB-T illuminators<br/>range + Doppler + micro-Doppler"] --> F
     RID[Remote ID Sniffers<br/>ESP32 × N · BLE / WiFi NaN] --> F
     F --> D[SQLite detections + dashboard]
     D --> A[Alerts · SMS / MQTT]
