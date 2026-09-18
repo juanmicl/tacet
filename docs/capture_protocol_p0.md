@@ -82,7 +82,14 @@ Notes:
 
 ## Failure handling
 
-Nonzero exit, KeyboardInterrupt (Ctrl-C) or a byte-count mismatch: the CLI
-deletes the partial file and its sidecar log, prunes the now-empty session
-directory and writes nothing to the manifest. Interrupted sessions exit
-with code 130. There is never a partial capture to "rescue" — re-record.
+- **Nonzero exit or KeyboardInterrupt (Ctrl-C):** the CLI deletes the
+  partial capture and its sidecar log, prunes the now-empty session
+  directory and writes nothing to the manifest. Exit codes: 2 on failure,
+  130 on interrupt. There is never a partial capture to "rescue" —
+  re-record.
+- **Byte-count mismatch** (file size differs from
+  2 bytes x 20 Msps x duration — possible silent USB sample drops): this
+  is a WARNING, not a failure. Exit code is 0, the capture and its
+  sidecar log are kept, and the manifest entry is written with the
+  warning recorded in `operator_notes`. A capture with dropped samples is
+  suspect: plan a re-record unless the segment you need is intact.
