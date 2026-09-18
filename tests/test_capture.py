@@ -98,7 +98,7 @@ def _repo_schema() -> str:
 
 
 @contextlib.contextmanager
-def _fake_repo_ctx(fail=False, size_bytes=None):
+def _fake_repo_ctx(fail=False, size_bytes=None, interrupt=False):
     """Fake repo root (chdir'd) with fake shutil.which + subprocess.run.
 
     Maps the plan's ``_make_fake_ctx(monkeypatch, tmpdir, ...)`` +
@@ -115,6 +115,9 @@ def _fake_repo_ctx(fail=False, size_bytes=None):
             def fake_run(argv, **kw):
                 path = argv[argv.index("-r") + 1]
                 Path(path).parent.mkdir(parents=True, exist_ok=True)
+                if interrupt:
+                    Path(path).write_bytes(b"PARTIAL")  # partial garbage
+                    raise KeyboardInterrupt
                 if fail:
                     Path(path).write_bytes(b"PARTIAL")  # partial garbage
                     class R:  # fake failed result
@@ -137,7 +140,7 @@ def _fake_repo_ctx(fail=False, size_bytes=None):
 
 
 def test_capture_success_writes_manifest():
-    with _fake_repo_ctx():
+    with _fake_repo_ctx(), contextlib.redirect_stdout(io.StringIO()):
         rc = capture.main(["elrs-bench", "--duration-s", "1",
                            "--power", "100", "--notes", "t"])
         assert rc == 0
@@ -158,11 +161,25 @@ def test_capture_failure_cleans_up_and_writes_nothing():
 
 
 def test_byte_count_mismatch_recorded():
-    with _fake_repo_ctx(size_bytes=123):  # truncated file
+    with _fake_repo_ctx(size_bytes=123), \
+         contextlib.redirect_stdout(io.StringIO()), \
+         contextlib.redirect_stderr(io.StringIO()):  # captured, not printed
         rc = capture.main(["elrs-bench", "--duration-s", "1"])
         assert rc == 0
         entries = json.loads(Path("manifest.json").read_text(encoding="utf-8"))
         assert "byte-count" in entries[0]["operator_notes"]
+
+
+def test_keyboard_interrupt_cleans_up():
+    with _fake_repo_ctx(interrupt=True), \
+         contextlib.redirect_stdout(io.StringIO()):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc = capture.main(["elrs-bench", "--duration-s", "1"])
+        assert rc == 130
+        assert list(Path("data").rglob("*")) == []  # no orphan partial file
+        assert not Path("manifest.json").exists()
+        assert "interrupted" in err.getvalue()
 
 
 if __name__ == "__main__":

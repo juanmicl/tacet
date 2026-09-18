@@ -131,6 +131,16 @@ def _run_hackrf(argv, log_path):
     return proc
 
 
+def _log_tail(log_path: Path, lines: int = 10) -> None:
+    """Dump the last lines of the sidecar log to stderr (failure forensics)."""
+    try:
+        with open(log_path, encoding="utf-8", errors="replace") as fh:
+            tail = fh.readlines()[-lines:]
+    except OSError:
+        return
+    sys.stderr.write("".join(tail))
+
+
 def _prune_empty_dirs(session_dir: Path) -> None:
     """Remove now-empty session dirs up to but not including data/."""
     d = session_dir
@@ -142,16 +152,27 @@ def _prune_empty_dirs(session_dir: Path) -> None:
         d = d.parent
 
 
+def _discard_partial(path: Path, session_dir: Path) -> None:
+    """Delete the partial capture + sidecar; prune empty session dirs."""
+    path.unlink(missing_ok=True)          # zero orphan data
+    path.with_suffix(".log").unlink(missing_ok=True)
+    _prune_empty_dirs(session_dir)        # nothing left under data/
+
+
 def _capture_once(ns, session_dir: Path, index: int):
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     path = session_dir / f"{ns.scenario}_{index:03d}.cs8"
     n_samples = int(round(ns.duration_s * FS))
     argv = build_argv(ns.freq_mhz * 1_000_000, n_samples, ns.lna, ns.vga, path)
-    proc = _run_hackrf(argv, path.with_suffix(".log"))
+    try:
+        proc = _run_hackrf(argv, path.with_suffix(".log"))
+    except KeyboardInterrupt:
+        _discard_partial(path, session_dir)
+        print("interrupted; partial capture removed", file=sys.stderr)
+        raise
     if proc.returncode != 0:
-        path.unlink(missing_ok=True)          # zero orphan data
-        path.with_suffix(".log").unlink(missing_ok=True)
-        _prune_empty_dirs(session_dir)        # nothing left under data/
+        _log_tail(path.with_suffix(".log"))   # only record of why it failed
+        _discard_partial(path, session_dir)
         print(f"hackrf_transfer failed (rc={proc.returncode}); "
               f"partial file removed", file=sys.stderr)
         return None
@@ -189,12 +210,19 @@ def o4_scan(ns, session_dir: Path):
     for mhz in o4_scan_bins():
         dwell = session_dir / f"scan_{mhz}MHz.cs8"
         argv = build_argv(mhz * 1_000_000, n_samples, ns.lna, ns.vga, dwell)
-        proc = _run_hackrf(argv, dwell.with_suffix(".log"))
+        try:
+            proc = _run_hackrf(argv, dwell.with_suffix(".log"))
+        except KeyboardInterrupt:
+            dwell.unlink(missing_ok=True)
+            dwell.with_suffix(".log").unlink(missing_ok=True)
+            raise
         if proc.returncode != 0:
             dwell.unlink(missing_ok=True)
             dwell.with_suffix(".log").unlink(missing_ok=True)
             continue
         z = load_cs8(str(dwell))
+        dwell.unlink(missing_ok=True)   # discard the dwell capture
+        dwell.with_suffix(".log").unlink(missing_ok=True)
         if z.size == 0:
             continue
         _, p = features.welch_psd(z, float(FS))
@@ -202,8 +230,6 @@ def o4_scan(ns, session_dir: Path):
         peak = float(p[mask].max()) if mask.any() else float(p.max())
         if peak > best_peak:
             best_mhz, best_peak = mhz, peak
-        dwell.unlink(missing_ok=True)   # discard the dwell capture
-        dwell.with_suffix(".log").unlink(missing_ok=True)
     if best_mhz is not None:
         note = f"[o4-scan winner {best_mhz} MHz, peak {best_peak:.4g}]"
         ns.notes = (ns.notes + " " + note).strip()
@@ -324,12 +350,20 @@ def main(argv=None) -> int:
         Path("data") / "signature_capture"
         / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
     session_dir.mkdir(parents=True, exist_ok=True)
-    if args.scenario == "o4-scan":
-        winner = o4_scan(args, session_dir)
-        if winner is None:
-            _prune_empty_dirs(session_dir)
-            print("o4-scan: no bin produced a dwell capture", file=sys.stderr)
-            return 2
-        args.freq_mhz = float(winner)
-    entry = _capture_once(args, session_dir, 0)
+    try:
+        if args.scenario == "o4-scan":
+            winner = o4_scan(args, session_dir)
+            if winner is None:
+                _prune_empty_dirs(session_dir)
+                print("o4-scan: no bin produced a dwell capture",
+                      file=sys.stderr)
+                return 2
+            args.freq_mhz = float(winner)
+        entry = _capture_once(args, session_dir, 0)
+    except KeyboardInterrupt:
+        # _capture_once/_o4 scan already cleaned their partial files;
+        # prune any empty session dirs left behind.
+        _prune_empty_dirs(session_dir)
+        print("interrupted", file=sys.stderr)
+        return 130
     return 0 if entry is not None else 2
