@@ -19,4 +19,4 @@ jobs:
         run: uv sync
 
       - name: Run synthetic self-tests
-        run: uv run python -m tests.test_coherence
+        run: uv run python -m tests
