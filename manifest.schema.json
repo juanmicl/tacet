@@ -96,15 +96,11 @@
     "gain": {
       "type": "object",
       "properties": {
-        "mode": {
-          "enum": ["manual", "agc"]
-        },
-        "rx1_db": {
-          "type": "number"
-        },
-        "rx2_db": {
-          "type": "number"
-        }
+        "mode": { "enum": ["manual", "agc"] },
+        "rx1_db": { "type": "number" },
+        "rx2_db": { "type": "number" },
+        "lna_db": { "type": "number" },
+        "vga_db": { "type": "number" }
       }
     },
     "rf_chain": {

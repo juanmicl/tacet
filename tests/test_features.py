@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from pathlib import Path
 
 import numpy as np
 
@@ -30,6 +31,37 @@ def test_cs8_odd_byte_count():
         np.asarray([1, 2, 3, 4, 5], dtype="<i1").tofile(path)  # 2.5 samples
         z = cs8.load_cs8(path)
         assert z.shape == (2,)  # trailing half-sample ignored
+
+
+def test_manifest_hackrf_gain_and_repo_root():
+    from tacet.loaders import manifest as mm
+    import json as _json
+
+    entry = {
+        "id": "sig-0001",
+        "timestamp": "2026-09-19T10:00:00+00:00",
+        "device": "hackrf",
+        "protocol": "elrs",
+        "purpose": "signature_capture",
+        "center_freq_hz": 2_440_000_000.0,
+        "sample_rate_sps": 20_000_000.0,
+        "format": "cs8",
+        "duration_s": 5.0,
+        "channels": [{"path": "data/signature_cal/s/a.cs8", "sha256": "00" * 32}],
+        "antenna": "dual-band 2.4/5.8 SMA",
+        "operator_notes": "test",
+        "band": "2.4 GHz ISM",
+        "tx_power_dbm": 20.0,
+        "gain": {"mode": "manual", "lna_db": 32, "vga_db": 32},
+    }
+    mm.validate_entry(entry)  # lna_db/vga_db must be accepted
+    with tempfile.TemporaryDirectory() as tmp:
+        # fake repo root with schema + manifest
+        (Path(tmp) / "pyproject.toml").write_text("", encoding="utf-8")
+        _schema = Path("manifest.schema.json").read_text(encoding="utf-8")
+        (Path(tmp) / "manifest.schema.json").write_text(_schema, encoding="utf-8")
+        root = mm._repo_root(start=Path(tmp) / "sub" / "dir")
+        assert root == Path(tmp).resolve()  # walks up to pyproject.toml
 
 
 if __name__ == "__main__":

@@ -9,7 +9,8 @@ import hashlib
 import json
 import os
 from datetime import datetime
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 
 _SCALAR_TYPES = {
     "string": str,
@@ -19,6 +20,15 @@ _SCALAR_TYPES = {
     "object": dict,
     "array": list,
 }
+
+
+def _repo_root(start=None) -> Path:
+    """Nearest ancestor (including start) that contains pyproject.toml."""
+    p = Path(start if start is not None else Path.cwd()).resolve()
+    for candidate in (p, *p.parents):
+        if (candidate / "pyproject.toml").is_file():
+            return candidate
+    return p
 
 
 def compute_sha256(path: str, chunk_bytes: int = 1 << 20) -> str:
@@ -70,8 +80,10 @@ def _validate_against_schema(value: Any, schema: dict, where: str) -> None:
                 _validate_against_schema(item, schema["items"], f"{where}[{i}]")
 
 
-def validate_entry(entry: dict, schema_path: str = "manifest.schema.json") -> None:
+def validate_entry(entry: dict, schema_path: Optional[str] = None) -> None:
     """Validate a manifest entry against the schema; raise ValueError if bad."""
+    if schema_path is None:
+        schema_path = str(_repo_root() / "manifest.schema.json")
     if not isinstance(entry, dict):
         raise ValueError("entry must be an object")
     with open(schema_path, encoding="utf-8") as fh:
@@ -86,8 +98,10 @@ def validate_entry(entry: dict, schema_path: str = "manifest.schema.json") -> No
             raise ValueError(f"entry.channels[{i}].path: must live under data/")
 
 
-def append_entry(entry: dict, manifest_path: str = "manifest.json") -> None:
+def append_entry(entry: dict, manifest_path: Optional[str] = None) -> None:
     """Validate and append ``entry``; reject duplicate ids."""
+    if manifest_path is None:
+        manifest_path = str(_repo_root() / "manifest.json")
     validate_entry(entry)
     entries: list = []
     if os.path.exists(manifest_path):
@@ -102,14 +116,16 @@ def append_entry(entry: dict, manifest_path: str = "manifest.json") -> None:
 
 
 def query(
-    manifest_path: str = "manifest.json",
-    schema_path: str | None = None,
+    manifest_path: Optional[str] = None,
+    schema_path: Optional[str] = None,
     **equality_filters: Any,
 ) -> list:
     """Return manifest entries whose fields equal every given filter.
 
     Nested filters use ``__`` as separator, e.g. ``gain__mode='manual'``.
     """
+    if manifest_path is None:
+        manifest_path = str(_repo_root() / "manifest.json")
     with open(manifest_path, encoding="utf-8") as fh:
         entries = json.load(fh)
     rows = []
