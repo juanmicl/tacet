@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "umbra-recording-manifest-v1",
+  "title": "Umbra recording manifest entry",
+  "description": "Data contract for one recording session entry in manifest.json. One entry may carry 1-2 channels (e.g. the two coherent RX channels of a Pluto+).",
+  "type": "object",
+  "required": [
+    "id",
+    "timestamp",
+    "device",
+    "protocol",
+    "purpose",
+    "center_freq_hz",
+    "sample_rate_sps",
+    "format",
+    "duration_s",
+    "channels",
+    "antenna",
+    "operator_notes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable recording identifier, unique across the manifest."
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Capture start time, ISO 8601 with timezone."
+    },
+    "device": {
+      "enum": ["hackrf", "pluto_plus", "rtl_sdr", "esp32", "other"]
+    },
+    "protocol": {
+      "enum": ["elrs", "dji_o4", "dji_o3", "analog_fpv", "fm_carrier", "dvbt", "noise", "other"]
+    },
+    "purpose": {
+      "enum": ["coherence_cal", "signature_capture", "range_test", "dataset_baseline", "other"]
+    },
+    "center_freq_hz": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "sample_rate_sps": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "format": {
+      "enum": ["cs8", "cs16", "cf32"]
+    },
+    "duration_s": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "channels": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path relative to the repo root, inside data/."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "antenna": {
+      "type": "string"
+    },
+    "operator_notes": {
+      "type": "string"
+    },
+    "band": {
+      "type": "string"
+    },
+    "tx_power_dbm": {
+      "type": "number",
+      "description": "Known transmitter power, if any (receive-only project: usually absent)."
+    },
+    "distance_m": {
+      "type": "number"
+    },
+    "environment": {
+      "enum": ["urban", "rural", "open"]
+    },
+    "los_nlos": {
+      "enum": ["los", "nlos"]
+    },
+    "gain": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": ["manual", "agc"]
+        },
+        "rx1_db": {
+          "type": "number"
+        },
+        "rx2_db": {
+          "type": "number"
+        }
+      }
+    },
+    "rf_chain": {
+      "type": "object",
+      "properties": {
+        "splitter": {
+          "type": "string"
+        },
+        "cable_len_m": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}
