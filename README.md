@@ -1,5 +1,11 @@
 # Tacet: Passive Drone Detection Layer
 
+[![tests](https://github.com/juanmicl/tacet/actions/workflows/tests.yml/badge.svg)](https://github.com/juanmicl/tacet/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+*Tacet*: in a musical score, it marks the instrument that stays silent. This
+is the sensor that never transmits.
+
 Low-cost, receive-only drone detection for critical infrastructure. RF
 signature analysis, acoustic arrays, and passive radar, fused by a Bayesian
 multi-target tracker. The system emits nothing, jams nothing, and does not
@@ -26,6 +32,22 @@ Most counter-drone products fail at three things:
 
 Tacet is a layered answer: three sensing modalities, each covering the blind
 spot of the others, fused into tracks with quantified uncertainty.
+
+## Quickstart
+
+No SDR required: tests and notebooks run on synthetic signals.
+
+```bash
+git clone https://github.com/juanmicl/tacet
+cd tacet
+uv sync                                # numpy / scipy / matplotlib / pandas
+uv run python -m tests.test_coherence  # synthetic self-tests, no hardware
+```
+
+Notebooks live in `notebooks/`, answer one question each, and run top to
+bottom against the project venv (notebook 02 falls back to clearly labeled
+synthetic data when no recordings exist). For bench captures with the
+Pluto+: `uv sync --extra acquisition`.
 
 ## Architecture
 
