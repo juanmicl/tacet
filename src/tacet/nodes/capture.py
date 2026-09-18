@@ -7,6 +7,7 @@ frequencies, gains and manifest context for the P0 bench sessions.
 import argparse
 import json
 import math
+import os
 import shutil
 import subprocess
 import sys
@@ -59,6 +60,33 @@ def validate_duration(duration_s: float) -> None:
         raise ValueError(f"--duration-s must be 1-60, got {duration_s}")
 
 
+def validate_freq_mhz(freq_mhz: float | None) -> None:
+    if freq_mhz is None:
+        return
+    if freq_mhz != int(freq_mhz) or not 100 <= freq_mhz <= 6000:
+        raise ValueError(
+            f"--freq-mhz must be an integer in 100-6000, got {freq_mhz}")
+
+
+def validate_power(power_mw: float | None) -> None:
+    if power_mw is None:
+        return
+    if power_mw <= 0:
+        raise ValueError(f"--power must be > 0 mW, got {power_mw}")
+
+
+def build_center_hz(scenario: str, ns) -> float:
+    """Center frequency (MHz) for a scenario from parsed args.
+
+    elrs-bench defaults to ELRS_DEFAULT_MHZ; o4-fixed requires --freq-mhz.
+    """
+    if ns.freq_mhz is not None:
+        return float(ns.freq_mhz)
+    if scenario == "elrs-bench":
+        return float(ELRS_DEFAULT_MHZ)
+    raise ValueError("--freq-mhz is required for o4-fixed")
+
+
 def build_argv(center_hz: int, n_samples: int, lna: int, vga: int, path: str):
     return [
         "hackrf_transfer", "-r", str(path),
@@ -68,7 +96,7 @@ def build_argv(center_hz: int, n_samples: int, lna: int, vga: int, path: str):
 
 
 def build_entry(args: dict) -> dict:
-    return {
+    entry = {
         "id": Path(args["path"]).stem,
         "timestamp": args["timestamp"],
         "device": "hackrf",
@@ -89,6 +117,97 @@ def build_entry(args: dict) -> dict:
         "los_nlos": args.get("los"),
         "gain": {"mode": "manual", "lna_db": args["lna"], "vga_db": args["vga"]},
     }
+    # Optional context the operator did not supply: omit rather than emit
+    # nulls (the manifest validator rejects present-but-null fields).
+    for key in ("tx_power_dbm", "distance_m", "environment", "los_nlos"):
+        if entry[key] is None:
+            del entry[key]
+    return entry
+
+
+def _run_hackrf(argv, log_path):
+    with open(log_path, "w", encoding="utf-8") as log:
+        proc = subprocess.run(argv, stdout=log, stderr=subprocess.STDOUT)
+    return proc
+
+
+def _prune_empty_dirs(session_dir: Path) -> None:
+    """Remove now-empty session dirs up to but not including data/."""
+    d = session_dir
+    while d.name != "data" and d != d.parent:
+        try:
+            d.rmdir()  # succeeds only when the directory is empty
+        except OSError:
+            break
+        d = d.parent
+
+
+def _capture_once(ns, session_dir: Path, index: int):
+    ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    path = session_dir / f"{ns.scenario}_{index:03d}.cs8"
+    n_samples = int(round(ns.duration_s * FS))
+    argv = build_argv(ns.freq_mhz * 1_000_000, n_samples, ns.lna, ns.vga, path)
+    proc = _run_hackrf(argv, path.with_suffix(".log"))
+    if proc.returncode != 0:
+        path.unlink(missing_ok=True)          # zero orphan data
+        path.with_suffix(".log").unlink(missing_ok=True)
+        _prune_empty_dirs(session_dir)        # nothing left under data/
+        print(f"hackrf_transfer failed (rc={proc.returncode}); "
+              f"partial file removed", file=sys.stderr)
+        return None
+    expected = BYTES_PER_SAMPLE * n_samples
+    actual = path.stat().st_size
+    warn = ""
+    if actual != expected:
+        warn = (f" [byte-count warning: expected {expected}, got {actual} "
+                f"— possible dropped samples, see sidecar log]")
+        print(f"WARNING:{warn}", file=sys.stderr)
+    entry = build_entry(dict(
+        scenario=ns.scenario, freq_mhz=ns.freq_mhz, duration_s=ns.duration_s,
+        lna=ns.lna, vga=ns.vga, power_mw=ns.power, notes=ns.notes + warn,
+        distance_m=ns.distance_m, env=ns.env, los=ns.los,
+        antenna=ns.antenna, path=str(path),
+        sha256=manifest_mod.compute_sha256(path), timestamp=ts))
+    manifest_mod.append_entry(entry)
+    print(f"captured {path} ({actual} bytes){warn}")
+    return entry
+
+
+def o4_scan(ns, session_dir: Path):
+    """Dwell-scan the O4 bins; return the winning MHz (None if none).
+
+    Per bin: a short capture that is discarded afterwards, then the
+    DC-masked Welch peak over the loaded dwell file decides the winner.
+    Appends winner and peak to ns.notes.
+    """
+    from tacet.dsp import features
+    from tacet.loaders.cs8 import load_cs8
+
+    best_mhz = None
+    best_peak = -math.inf
+    n_samples = max(int(round(ns.dwell_s * FS)), 1)
+    for mhz in o4_scan_bins():
+        dwell = session_dir / f"scan_{mhz}MHz.cs8"
+        argv = build_argv(mhz * 1_000_000, n_samples, ns.lna, ns.vga, dwell)
+        proc = _run_hackrf(argv, dwell.with_suffix(".log"))
+        if proc.returncode != 0:
+            dwell.unlink(missing_ok=True)
+            dwell.with_suffix(".log").unlink(missing_ok=True)
+            continue
+        z = load_cs8(str(dwell))
+        if z.size == 0:
+            continue
+        _, p = features.welch_psd(z, float(FS))
+        mask = features._dc_mask(p.size)
+        peak = float(p[mask].max()) if mask.any() else float(p.max())
+        if peak > best_peak:
+            best_mhz, best_peak = mhz, peak
+        dwell.unlink(missing_ok=True)   # discard the dwell capture
+        dwell.with_suffix(".log").unlink(missing_ok=True)
+    if best_mhz is not None:
+        note = f"[o4-scan winner {best_mhz} MHz, peak {best_peak:.4g}]"
+        ns.notes = (ns.notes + " " + note).strip()
+    return best_mhz
 
 
 def main(argv=None) -> int:
@@ -144,31 +263,38 @@ def main(argv=None) -> int:
     try:
         validate_gains(args.lna, args.vga)
         validate_duration(args.duration_s)
+        validate_freq_mhz(args.freq_mhz)
+        validate_power(args.power)
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     if args.power is not None and args.scenario != "elrs-bench":
         print("error: --power applies to elrs-bench only", file=sys.stderr)
         return 2
-
-    freq_mhz = args.freq_mhz
-    if freq_mhz is None:
-        if args.scenario == "elrs-bench":
-            freq_mhz = float(ELRS_DEFAULT_MHZ)
-        elif args.scenario == "o4-fixed":
-            print("error: --freq-mhz is required for o4-fixed", file=sys.stderr)
+    if args.scenario != "o4-scan":
+        # o4-scan resolves its center from the dwell scan below.
+        try:
+            args.freq_mhz = build_center_hz(args.scenario, args)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
             return 2
 
     root = Path(manifest_mod._repo_root(args.repo_root))
-    rel_path = f"data/signature_capture/{args.scenario}/{args.scenario}_000.cs8"
-
+    os.chdir(root)  # anchor the relative session paths below (any cwd)
     if args.dry_run:
-        if args.scenario == "o4-scan" and freq_mhz is None:
+        if args.scenario == "o4-scan" and args.freq_mhz is None:
             bins = o4_scan_bins()
             print(f"o4-scan plan: {len(bins)} bins, dwell {args.dwell_s} s")
             print("bins (MHz): " + " ".join(str(b) for b in bins))
             return 0
+        try:
+            freq_mhz = build_center_hz(args.scenario, args)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
         n_samples = int(round(args.duration_s * FS))
+        rel_path = (
+            f"data/signature_capture/{args.scenario}/{args.scenario}_000.cs8")
         entry = build_entry(dict(
             scenario=args.scenario, freq_mhz=freq_mhz,
             duration_s=args.duration_s, lna=args.lna, vga=args.vga,
@@ -183,5 +309,27 @@ def main(argv=None) -> int:
         print(json.dumps(entry, indent=2))
         return 0
 
-    print("capture execution not implemented yet (Task 6)", file=sys.stderr)
-    return 2
+    # Real capture path.
+    if shutil.which("hackrf_transfer") is None:
+        print("hackrf_transfer not found on PATH. "
+              "Install hackrf tools (e.g. apt install hackrf).", file=sys.stderr)
+        return 2
+    est_bytes = BYTES_PER_SAMPLE * FS * args.duration_s
+    free = shutil.disk_usage(str(root)).free
+    if free < 2 * est_bytes:
+        print(f"insufficient disk: need ~{est_bytes/1e6:.0f} MB, "
+              f"free {free/1e6:.0f} MB", file=sys.stderr)
+        return 2
+    session_dir = (
+        Path("data") / "signature_capture"
+        / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
+    session_dir.mkdir(parents=True, exist_ok=True)
+    if args.scenario == "o4-scan":
+        winner = o4_scan(args, session_dir)
+        if winner is None:
+            _prune_empty_dirs(session_dir)
+            print("o4-scan: no bin produced a dwell capture", file=sys.stderr)
+            return 2
+        args.freq_mhz = float(winner)
+    entry = _capture_once(args, session_dir, 0)
+    return 0 if entry is not None else 2
