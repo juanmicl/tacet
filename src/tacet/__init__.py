@@ -1,2 +1,7 @@
+"""Tacet: passive drone detection (receive-only)."""
+
+
 def main() -> None:
-    print("Hello from tacet!")
+    from tacet.cli import app
+
+    raise SystemExit(app())
