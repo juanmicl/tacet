@@ -1,5 +1,5 @@
 [project]
-name = "umbra"
+name = "tacet"
 version = "0.1.0"
 description = "Low-cost, receive-only drone detection for critical infrastructure"
 readme = "README.md"
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-umbra = "umbra:main"
+tacet = "tacet:main"
 
 [project.optional-dependencies]
 acquisition = ["pyadi-iio>=0.0.21"]

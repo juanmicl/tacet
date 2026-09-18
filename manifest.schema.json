@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "umbra-recording-manifest-v1",
-  "title": "Umbra recording manifest entry",
+  "$id": "tacet-recording-manifest-v1",
+  "title": "Tacet recording manifest entry",
   "description": "Data contract for one recording session entry in manifest.json. One entry may carry 1-2 channels (e.g. the two coherent RX channels of a Pluto+).",
   "type": "object",
   "required": [

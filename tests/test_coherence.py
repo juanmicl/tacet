@@ -1,4 +1,4 @@
-"""Synthetic self-tests for umbra.dsp.coherence and umbra.loaders.
+"""Synthetic self-tests for tacet.dsp.coherence and tacet.loaders.
 
 Every test is synthetic: no hardware, no pyadi-iio. Run with either
 ``uv run python -m tests.test_coherence`` or ``uv run pytest tests/``.
@@ -10,9 +10,9 @@ import tempfile
 
 import numpy as np
 
-from umbra.dsp import coherence
-from umbra.loaders import cs16
-from umbra.loaders import manifest as manifest_mod
+from tacet.dsp import coherence
+from tacet.loaders import cs16
+from tacet.loaders import manifest as manifest_mod
 
 
 def test_phase_offset_and_drift_recovery():

@@ -38,7 +38,7 @@ assumed.
   (`fm_carrier`), purpose (`coherence_cal`), gains, antenna and RF chain
   (splitter, cable length), plus sha256 per channel file.
 
-## Analysis pipeline (`umbra.dsp.coherence`)
+## Analysis pipeline (`tacet.dsp.coherence`)
 
 1. Carrier extraction: downconvert the FM carrier, ~3 kHz narrowband FIR,
    decimate to ~5 ksps (block-streaming, filter state carried across

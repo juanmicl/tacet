@@ -1,8 +1,8 @@
-# Umbra — Project Context (AGENTS.md)
+# Tacet — Project Context (AGENTS.md)
 
 ## What this project is
 
-Umbra is a **passive (receive-only) drone detection system**: low-cost sensing
+Tacet is a **passive (receive-only) drone detection system**: low-cost sensing
 nodes that detect and track drones around critical infrastructure (prisons,
 solar farms, ports, data centers) where airport-grade counter-drone systems
 are unaffordable. Three sensing layers fused by a Bayesian multi-target
@@ -83,14 +83,14 @@ Concrete goals, in order:
 ## Repo conventions
 
 ```
-src/umbra/
+src/tacet/
 ├── loaders/    # cs8 (HackRF) / cs16 (Pluto+) / float32-interleaved (BladeRF)
 │               # → complex64, strict manifest ingestion, public dataset loaders
 ├── dsp/        # feature extraction, detectors (chirp, OFDM, energy)
 ├── trackers/   # Stone Soup integration, measurement models (later)
 └── nodes/      # host-side node orchestration (later; ESP32/Pi firmware will
                 # live outside the Python package)
-tests/          # synthetic self-tests, import umbra.* (pytest or python -m)
+tests/          # synthetic self-tests, import tacet.* (pytest or python -m)
 notebooks/      # numbered, reproducible experiments (01_bench_overview, ...)
 docs/           # experiment reports
 data/           # gitignored; manifest + checksums tracked in git
@@ -102,7 +102,7 @@ manifest.json   # recording index (tracked in git)
   (.python-version), numpy/scipy/matplotlib/pandas. pyadi-iio only as the
   `acquisition` extra (`uv sync --extra acquisition`). No heavy frameworks
   until needed. Notebooks: one question per notebook, outputs reproducible.
-- Code imports the installed package (`from umbra.dsp import coherence`);
+- Code imports the installed package (`from tacet.dsp import coherence`);
   notebooks and tests run against the project venv.
 - MIT license. Public repo from day one (proof-of-prior-work matters).
 - **Clean-room rule**: another GitHub project (`arall/sigint`, a SIGINT

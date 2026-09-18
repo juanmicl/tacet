@@ -1,4 +1,4 @@
-# Umbra: Passive Drone Detection Layer
+# Tacet: Passive Drone Detection Layer
 
 Low-cost, receive-only drone detection for critical infrastructure. RF
 signature analysis, acoustic arrays, and passive radar, fused by a Bayesian
@@ -24,7 +24,7 @@ Most counter-drone products fail at three things:
    legal market is passive detection, which is also the stealthiest
    architecture: an undetectable sensor cannot be targeted.
 
-Umbra is a layered answer: three sensing modalities, each covering the blind
+Tacet is a layered answer: three sensing modalities, each covering the blind
 spot of the others, fused into tracks with quantified uncertainty.
 
 ## Architecture
@@ -82,10 +82,10 @@ flowchart LR
 
 ```
 repo/
-├── src/umbra/    # package code: loaders (cs8/cs16/f32 → complex64,
+├── src/tacet/    # package code: loaders (cs8/cs16/f32 → complex64,
 │                 # manifest ingestion), dsp (features, detectors),
 │                 # trackers + nodes orchestration (later)
-├── tests/        # synthetic self-tests (import umbra.*)
+├── tests/        # synthetic self-tests (import tacet.*)
 ├── notebooks/    # experiments (numbered, reproducible)
 ├── docs/         # experiment reports
 └── data/         # gitignored; manifest + checksums tracked
@@ -105,6 +105,6 @@ per release.
 
 ## Legal notice
 
-Umbra is receive-only passive sensing. It does not jam, decrypt, or
+Tacet is receive-only passive sensing. It does not jam, decrypt, or
 intercept content. Operators remain responsible for compliance with local
 radio and privacy law.
