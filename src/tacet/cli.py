@@ -6,12 +6,16 @@ def app(argv=None) -> int:
 
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv or argv[0] in {"-h", "--help", "help"}:
-        print("usage: tacet <command> [args]\ncommands: capture")
+        print("usage: tacet <command> [args]\ncommands: capture, manifest")
         return 0
     if argv[0] == "capture":
         from tacet.nodes.capture import main as capture_main
 
         return capture_main(argv[1:])
+    if argv[0] == "manifest":
+        from tacet.nodes.manifest_cli import main as manifest_main
+
+        return manifest_main(argv[1:])
     print(f"unknown command: {argv[0]}", file=sys.stderr)
     return 2
 

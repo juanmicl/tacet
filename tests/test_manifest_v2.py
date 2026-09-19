@@ -1,12 +1,18 @@
 """Self-tests for Manifest v2: schema, validator, migration, validate CLI."""
 
+import contextlib
+import io
 import json
 import os
 import tempfile
+from datetime import datetime as _real_datetime
+from datetime import timedelta
 from pathlib import Path
+from unittest import mock
 
 from tacet.loaders import manifest as manifest_mod
 from tacet.loaders import migration
+from tacet.nodes import manifest_cli
 
 GOLDEN = Path(__file__).resolve().parent / "golden" / "manifest_v2.json"
 
@@ -259,6 +265,98 @@ def test_append_rejects_v1_flat_manifest():
         Path(mpath).write_text(json.dumps([_elrs_v1()]), encoding="utf-8")
         _must_raise(lambda: manifest_mod.append_entry(
             _v2_entry(id="c"), manifest_path=mpath))
+
+
+# --- `tacet manifest validate` ----------------------------------------------
+
+def GOLDEN_READ_SCHEMA() -> str:
+    """Real manifest schema text (from the repo root, src-layout parents)."""
+    return Path(manifest_cli.__file__).resolve().parents[3].joinpath(
+        "manifest.schema.json").read_text(encoding="utf-8")
+
+
+def test_validate_golden_ok():
+    doc = json.loads(GOLDEN.read_text(encoding="utf-8"))
+    assert manifest_cli.validate_manifest(doc) == []
+
+
+def test_validate_detects_problems():
+    golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
+    # wrong wrapper version
+    bad = {"schema_version": "1.0", "recordings": golden["recordings"]}
+    assert any("schema_version" in e
+               for e in manifest_cli.validate_manifest(bad))
+    # not a wrapper
+    assert manifest_cli.validate_manifest([1, 2]) != []
+    # duplicate ids
+    dup = json.loads(GOLDEN.read_text(encoding="utf-8"))
+    dup["recordings"].append(dict(dup["recordings"][0]))
+    assert any("duplicate id" in e
+               for e in manifest_cli.validate_manifest(dup))
+    # schema-invalid entry (v1 overloaded band value)
+    broken = json.loads(GOLDEN.read_text(encoding="utf-8"))
+    broken["recordings"][0]["band"] = "control"
+    assert any(".band" in e for e in manifest_cli.validate_manifest(broken))
+
+
+def test_validate_check_files():
+    with tempfile.TemporaryDirectory() as tmp:
+        old_cwd = os.getcwd()
+        os.chdir(tmp)
+        try:
+            (Path(tmp) / "pyproject.toml").write_text("", encoding="utf-8")
+            (Path(tmp) / "manifest.schema.json").write_text(
+                GOLDEN_READ_SCHEMA(), encoding="utf-8")
+            entry = _v2_entry()
+            rel = "data/signature_capture/s/elrs-bench_000.cs8"
+            entry["channels"][0]["path"] = rel
+            fpath = Path(tmp) / rel
+            fpath.parent.mkdir(parents=True, exist_ok=True)
+            fpath.write_bytes(b"\0" * 1024)
+            entry["channels"][0]["sha256"] = manifest_mod.compute_sha256(fpath)
+            doc = {"schema_version": "2.0", "recordings": [entry]}
+            # data/ present, file matches: no errors
+            assert manifest_cli.validate_manifest(
+                doc, check_files=True, repo_root=Path(tmp)) == []
+            # corrupted sha: reported
+            entry["channels"][0]["sha256"] = "ff" * 32
+            errs = manifest_cli.validate_manifest(
+                doc, check_files=True, repo_root=Path(tmp))
+            assert any("sha256 mismatch" in e for e in errs)
+            # data/ absent: file checks skipped gracefully
+            import shutil
+            shutil.rmtree(Path(tmp) / "data")
+            assert manifest_cli.validate_manifest(
+                doc, check_files=True, repo_root=Path(tmp)) == []
+        finally:
+            os.chdir(old_cwd)
+
+
+def test_manifest_cli_main():
+    with tempfile.TemporaryDirectory() as tmp:
+        old_cwd = os.getcwd()
+        os.chdir(tmp)
+        try:
+            (Path(tmp) / "pyproject.toml").write_text("", encoding="utf-8")
+            (Path(tmp) / "manifest.schema.json").write_text(
+                GOLDEN_READ_SCHEMA(), encoding="utf-8")
+            (Path(tmp) / "manifest.json").write_text(
+                GOLDEN.read_text(encoding="utf-8"), encoding="utf-8")
+            assert manifest_cli.main(["validate"]) == 0
+            bad = json.loads(GOLDEN.read_text(encoding="utf-8"))
+            bad["recordings"][1]["id"] = bad["recordings"][0]["id"]
+            (Path(tmp) / "manifest.json").write_text(
+                json.dumps(bad), encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                assert manifest_cli.main(["validate"]) == 1
+            assert "duplicate id" in err.getvalue()
+            # --check-files with no data/ directory: graceful pass
+            (Path(tmp) / "manifest.json").write_text(
+                GOLDEN.read_text(encoding="utf-8"), encoding="utf-8")
+            assert manifest_cli.main(["validate", "--check-files"]) == 0
+        finally:
+            os.chdir(old_cwd)
 
 
 if __name__ == "__main__":
