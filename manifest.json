@@ -1,1 +1,52 @@
-[]
+[
+  {
+    "id": "20260919T003427Z_control_000",
+    "timestamp": "2026-09-19T00:34:27+00:00",
+    "device": "hackrf",
+    "protocol": "noise",
+    "purpose": "signature_capture",
+    "center_freq_hz": 2440000000.0,
+    "sample_rate_sps": 20000000.0,
+    "format": "cs8",
+    "duration_s": 1.0,
+    "channels": [
+      {
+        "path": "data/signature_capture/20260919T003427Z/control_000.cs8",
+        "sha256": "3bcb7ec270313cd4ed19d318f4e33bed7382fdc44ba366bac12a84424b35d488"
+      }
+    ],
+    "antenna": "dual-band 2.4/5.8 SMA",
+    "operator_notes": "",
+    "band": "control",
+    "gain": {
+      "mode": "manual",
+      "lna_db": 32,
+      "vga_db": 32
+    }
+  },
+  {
+    "id": "20260919T003513Z_control_000",
+    "timestamp": "2026-09-19T00:35:13+00:00",
+    "device": "hackrf",
+    "protocol": "noise",
+    "purpose": "signature_capture",
+    "center_freq_hz": 2440000000.0,
+    "sample_rate_sps": 20000000.0,
+    "format": "cs8",
+    "duration_s": 1.0,
+    "channels": [
+      {
+        "path": "data/signature_capture/20260919T003513Z/control_000.cs8",
+        "sha256": "a3212a6f0cbf9e0b06b35869ad54581c720de8737ec149e72950d20c0c1a56b7"
+      }
+    ],
+    "antenna": "dual-band 2.4/5.8 SMA",
+    "operator_notes": "",
+    "band": "control",
+    "gain": {
+      "mode": "manual",
+      "lna_db": 16,
+      "vga_db": 16
+    }
+  }
+]
