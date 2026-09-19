@@ -167,10 +167,13 @@ If a change requires any of the right column, stop and flag it.
   - **DroneRF**: 43 GB, 227 RF segments, 3 drones, GitHub code available.
 - **Own dataset** (the moat): labeled recordings of modern FPV links
   (ELRS, DJI O4) at known distance/power/environment. Manifest fields per
-  recording: timestamp, device (drone/radio), protocol, band, center_freq,
-  sample_rate, format, tx_power (if known), distance_m, environment
-  (urban/rural/open), LOS/NLOS, antenna, gain settings (lna/vga), operator
-  notes. No public dataset covers these signals — treat the data pipeline
+  recording (v2): timestamp, device, protocol (physical), band (physical),
+  label (signal class: elrs/dji_o4/analog_fpv/background/interference),
+  condition (bench/flying/walk/tx_off), center_freq, sample_rate, format,
+  tx_power (if known), distance_m, environment (indoor_bench/rural/urban/
+  open_field), los, elrs_profile, antenna, gain settings (lna/vga), operator
+  notes, plus governance: contributor, source, consent, site_anonymized.
+  No public dataset covers these signals — treat the data pipeline
   as a first-class deliverable.
 
 ## Working style expected
