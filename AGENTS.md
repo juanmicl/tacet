@@ -187,6 +187,7 @@ If a change requires any of the right column, stop and flag it.
   synthetic signals. Add synthetic-signal unit tests for DSP primitives
   (e.g., generate a known chirp, assert the detector finds it).
 - Ask before: adding dependencies, changing repo structure, touching
-  anything outside the current phase's scope.
+  anything outside the current phase's scope, and ALWAYS before any
+  `git push` (pushes require the owner's explicit prior approval).
 - Current phase is P0/P1 ONLY. Passive radar and acoustic are future
   phases — do not scaffold them yet beyond the folder placeholders.
