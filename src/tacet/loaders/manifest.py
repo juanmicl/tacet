@@ -22,6 +22,9 @@ _SCALAR_TYPES = {
 }
 
 
+MANIFEST_SCHEMA_VERSION = "2.0"
+
+
 def _repo_root(start=None) -> Path:
     """Nearest ancestor (including start) that contains pyproject.toml."""
     p = Path(start if start is not None else Path.cwd()).resolve()
@@ -29,6 +32,46 @@ def _repo_root(start=None) -> Path:
         if (candidate / "pyproject.toml").is_file():
             return candidate
     return p
+
+
+def _empty_manifest_doc() -> dict:
+    return {"schema_version": MANIFEST_SCHEMA_VERSION, "recordings": []}
+
+
+def _read_doc(manifest_path: str) -> dict:
+    """Read a manifest document; v1 flat lists must be migrated first."""
+    with open(manifest_path, encoding="utf-8") as fh:
+        doc = json.load(fh)
+    if isinstance(doc, list):
+        raise ValueError(
+            f"{manifest_path}: manifest is v1 (flat list); run "
+            "scripts/migrate_manifest_v1_v2.py before writing to it")
+    if not isinstance(doc, dict) or not isinstance(doc.get("recordings"), list):
+        raise ValueError(
+            f"{manifest_path}: expected a v2 manifest wrapper "
+            "{schema_version, recordings}")
+    return doc
+
+
+def _read_entries(manifest_path: str) -> list:
+    """Read just the recordings; tolerates v1 flat lists (read-only use)."""
+    with open(manifest_path, encoding="utf-8") as fh:
+        doc = json.load(fh)
+    if isinstance(doc, list):
+        return doc
+    if isinstance(doc, dict) and isinstance(doc.get("recordings"), list):
+        return doc["recordings"]
+    raise ValueError(
+        f"{manifest_path}: expected a manifest list or v2 wrapper")
+
+
+def read_manifest(manifest_path: Optional[str] = None) -> dict:
+    """Return the manifest document (v2 wrapper); empty wrapper if absent."""
+    if manifest_path is None:
+        manifest_path = str(_repo_root() / "manifest.json")
+    if not os.path.exists(manifest_path):
+        return _empty_manifest_doc()
+    return _read_doc(manifest_path)
 
 
 def compute_sha256(path: str, chunk_bytes: int = 1 << 20) -> str:
@@ -118,19 +161,20 @@ def validate_entry(entry: dict, schema_path: Optional[str] = None) -> None:
 
 
 def append_entry(entry: dict, manifest_path: Optional[str] = None) -> None:
-    """Validate and append ``entry``; reject duplicate ids."""
+    """Validate and append ``entry`` to the v2 wrapper; reject duplicate ids."""
     if manifest_path is None:
         manifest_path = str(_repo_root() / "manifest.json")
     validate_entry(entry)
-    entries: list = []
     if os.path.exists(manifest_path):
-        with open(manifest_path, encoding="utf-8") as fh:
-            entries = json.load(fh)
-    if any(e.get("id") == entry["id"] for e in entries):
+        doc = _read_doc(manifest_path)
+    else:
+        doc = _empty_manifest_doc()
+    recordings = doc["recordings"]
+    if any(e.get("id") == entry["id"] for e in recordings):
         raise ValueError(f"duplicate recording id: {entry['id']}")
-    entries.append(entry)
+    recordings.append(entry)
     with open(manifest_path, "w", encoding="utf-8") as fh:
-        json.dump(entries, fh, indent=2)
+        json.dump(doc, fh, indent=2)
         fh.write("\n")
 
 
@@ -142,11 +186,11 @@ def query(
     """Return manifest entries whose fields equal every given filter.
 
     Nested filters use ``__`` as separator, e.g. ``gain__mode='manual'``.
+    Reads both the v2 wrapper and legacy v1 flat lists (read-only use).
     """
     if manifest_path is None:
         manifest_path = str(_repo_root() / "manifest.json")
-    with open(manifest_path, encoding="utf-8") as fh:
-        entries = json.load(fh)
+    entries = _read_entries(manifest_path)
     rows = []
     for e in entries:
         ok = True

@@ -123,6 +123,7 @@ def test_iq_imbalance_recovery():
 def test_manifest_roundtrip():
     entry = {
         "id": "coh-0001",
+        "schema_version": "2.0",
         "timestamp": "2026-09-18T20:00:00+02:00",
         "device": "pluto_plus",
         "protocol": "fm_carrier",
@@ -137,6 +138,16 @@ def test_manifest_roundtrip():
         ],
         "antenna": "ANT500 telescopic",
         "operator_notes": "self-test",
+        "band": "UHF DVB-T",
+        "label": "background",
+        "condition": "bench",
+        "distance_m": None,
+        "environment": "indoor_bench",
+        "los": True,
+        "contributor": "juanmicl",
+        "source": "own_capture",
+        "consent": "private",
+        "site_anonymized": True,
         "gain": {"mode": "manual", "rx1_db": 30.0, "rx2_db": 30.0},
         "rf_chain": {"splitter": "2-way 50R SMA", "cable_len_m": 1.0},
     }
@@ -148,7 +159,9 @@ def test_manifest_roundtrip():
         assert len(rows) == 1 and rows[0]["id"] == "coh-0001"
         assert manifest_mod.query(manifest_path=mpath, device="hackrf") == []
         with open(mpath) as fh:
-            assert json.load(fh)[0]["device"] == "pluto_plus"
+            doc = json.load(fh)
+        assert doc["schema_version"] == "2.0"
+        assert doc["recordings"][0]["device"] == "pluto_plus"
 
         bad = dict(entry)
         del bad["id"]
