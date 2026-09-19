@@ -227,5 +227,31 @@
       "lna_db": 8,
       "vga_db": 8
     }
+  },
+  {
+    "id": "20260919T005913Z_elrs-bench_000",
+    "timestamp": "2026-09-19T00:59:13+00:00",
+    "device": "hackrf",
+    "protocol": "elrs",
+    "purpose": "signature_capture",
+    "center_freq_hz": 2450000000.0,
+    "sample_rate_sps": 20000000.0,
+    "format": "cs8",
+    "duration_s": 3.0,
+    "channels": [
+      {
+        "path": "data/signature_capture/20260919T005913Z/elrs-bench_000.cs8",
+        "sha256": "70160744741ed456bf30be14bd3ed8931e8801436d02728d9a098e5e2d8f4b66"
+      }
+    ],
+    "antenna": "dual-band 2.4/5.8 SMA",
+    "operator_notes": "Boxer only, re-scan of quiet window 2450 (FHSS lumpiness test)",
+    "band": "2.4 GHz ISM",
+    "tx_power_dbm": 20.0,
+    "gain": {
+      "mode": "manual",
+      "lna_db": 8,
+      "vga_db": 8
+    }
   }
 ]
