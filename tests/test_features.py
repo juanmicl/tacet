@@ -39,6 +39,7 @@ def test_manifest_hackrf_gain_and_repo_root():
 
     entry = {
         "id": "sig-0001",
+        "schema_version": "2.0",
         "timestamp": "2026-09-19T10:00:00+00:00",
         "device": "hackrf",
         "protocol": "elrs",
@@ -51,6 +52,15 @@ def test_manifest_hackrf_gain_and_repo_root():
         "antenna": "dual-band 2.4/5.8 SMA",
         "operator_notes": "test",
         "band": "2.4 GHz ISM",
+        "label": "elrs",
+        "condition": "bench",
+        "distance_m": 1.0,
+        "environment": "indoor_bench",
+        "los": True,
+        "contributor": "juanmicl",
+        "source": "own_capture",
+        "consent": "private",
+        "site_anonymized": True,
         "tx_power_dbm": 20.0,
         "gain": {"mode": "manual", "lna_db": 32, "vga_db": 32},
     }

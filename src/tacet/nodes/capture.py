@@ -30,12 +30,20 @@ PROTOCOL_BY_SCENARIO = {
     "elrs-bench": "elrs",
     "control": "noise",
 }
-BAND_BY_SCENARIO = {
-    "o4-scan": "5.1/5.8 GHz",
-    "o4-fixed": "5.1/5.8 GHz",
-    "elrs-bench": "2.4 GHz ISM",
-    "control": "control",
-}
+
+
+def band_for_freq_mhz(mhz: float) -> str:
+    """Physical band for a center frequency (MHz); never a class label."""
+    if 2400 <= mhz <= 2500:
+        return "2.4 GHz ISM"
+    if 5100 <= mhz <= 5250:
+        return "5.1 GHz EU"
+    if 5700 <= mhz <= 5900:
+        return "5.8 GHz ISM"
+    if 470 <= mhz <= 860:
+        return "UHF DVB-T"
+    raise ValueError(f"no bench band maps to {mhz} MHz")
+
 
 SCENARIOS = {
     "o4-scan": "scan the 5.1/5.8 GHz bands for DJI O4 video bursts",
@@ -111,6 +119,7 @@ def build_entry(args: dict) -> dict:
         id_ = Path(args["path"]).stem
     entry = {
         "id": id_,
+        "schema_version": "2.0",
         "timestamp": args["timestamp"],
         "device": "hackrf",
         "protocol": PROTOCOL_BY_SCENARIO[args["scenario"]],
@@ -122,19 +131,22 @@ def build_entry(args: dict) -> dict:
         "channels": [{"path": args["path"], "sha256": args["sha256"]}],
         "antenna": args["antenna"],
         "operator_notes": args["notes"],
-        "band": BAND_BY_SCENARIO[args["scenario"]],
-        "tx_power_dbm": float(10.0 * math.log10(args["power_mw"]))
-        if args.get("power_mw") else None,
-        "distance_m": args.get("distance_m"),
-        "environment": args.get("env"),
-        "los_nlos": args.get("los"),
+        "band": band_for_freq_mhz(float(args["freq_mhz"])),
+        "label": args["label"],
+        "condition": args["condition"],
+        "distance_m": args.get("distance_m"),   # required-nullable: explicit
+        "environment": args.get("environment", "indoor_bench"),
+        "los": args.get("los"),                 # required-nullable: explicit
+        "contributor": args.get("contributor", "juanmicl"),
+        "source": args.get("source", "own_capture"),
+        "consent": args.get("consent", "private"),
+        "site_anonymized": args.get("site_anonymized", True),
         "gain": {"mode": "manual", "lna_db": args["lna"], "vga_db": args["vga"]},
     }
-    # Optional context the operator did not supply: omit rather than emit
-    # nulls (the manifest validator rejects present-but-null fields).
-    for key in ("tx_power_dbm", "distance_m", "environment", "los_nlos"):
-        if entry[key] is None:
-            del entry[key]
+    if args.get("elrs_profile") is not None:
+        entry["elrs_profile"] = args["elrs_profile"]
+    if args.get("power_mw"):
+        entry["tx_power_dbm"] = float(10.0 * math.log10(args["power_mw"]))
     return entry
 
 
@@ -199,7 +211,9 @@ def _capture_once(ns, session_dir: Path, index: int):
     entry = build_entry(dict(
         scenario=ns.scenario, freq_mhz=ns.freq_mhz, duration_s=ns.duration_s,
         lna=ns.lna, vga=ns.vga, power_mw=ns.power, notes=ns.notes + warn,
-        distance_m=ns.distance_m, env=ns.env, los=ns.los,
+        distance_m=ns.distance_m, environment=ns.environment,
+        los=ns.los, label=ns.label, condition=ns.condition,
+        elrs_profile=ns.elrs_profile, contributor=ns.contributor,
         antenna=ns.antenna, path=str(path),
         session=session_dir.name, index=index,
         sha256=manifest_mod.compute_sha256(path), timestamp=ts))
@@ -269,15 +283,30 @@ def main(argv=None) -> int:
     parser.add_argument("--lna", type=int, default=32)
     parser.add_argument("--vga", type=int, default=32)
     parser.add_argument(
+        "--label", required=True,
+        choices=["elrs", "dji_o4", "analog_fpv", "background", "interference"],
+        help="ML signal class in the recording (required, manifest v2)")
+    parser.add_argument(
+        "--condition", required=True,
+        choices=["bench", "flying", "walk", "tx_off"],
+        help="experimental condition (required, manifest v2)")
+    parser.add_argument(
+        "--environment", default="indoor_bench",
+        choices=["indoor_bench", "rural", "urban", "open_field"])
+    parser.add_argument("--distance-m", type=float, default=None)
+    parser.add_argument(
+        "--los", action=argparse.BooleanOptionalAction, default=None,
+        help="line of sight; omit for null (not meaningful)")
+    parser.add_argument(
+        "--elrs-profile", default=None,
+        help="ELRS packet rate / mode (e.g. D500); expected on ELRS captures")
+    parser.add_argument("--contributor", default="juanmicl")
+    parser.add_argument(
         "--power", type=float, default=None,
         help="known TX power in mW (elrs-bench only)",
     )
     parser.add_argument("--notes", default="")
-    parser.add_argument("--distance-m", type=float, default=None)
-    parser.add_argument("--env", default=None, choices=["urban", "rural", "open"])
-    parser.add_argument("--los", default=None, choices=["los", "nlos"])
-    parser.add_argument(
-        "--antenna", default="dual-band 2.4/5.8 SMA")
+    parser.add_argument("--antenna", default="dual-band 2.4/5.8 SMA")
     parser.add_argument(
         "--dwell-s", type=float, default=0.5,
         help="seconds per bin for o4-scan",
@@ -323,6 +352,10 @@ def main(argv=None) -> int:
 
     root = Path(manifest_mod._repo_root(args.repo_root))
     os.chdir(root)  # anchor the relative session paths below (any cwd)
+    if args.scenario == "elrs-bench" and args.elrs_profile is None:
+        print("warning: --elrs-profile not given; log the ELRS packet "
+              "rate/mode (e.g. D500) so captures stay comparable",
+              file=sys.stderr)
     if args.dry_run:
         if args.scenario == "o4-scan" and args.freq_mhz is None:
             bins = o4_scan_bins()
@@ -342,7 +375,9 @@ def main(argv=None) -> int:
             scenario=args.scenario, freq_mhz=freq_mhz,
             duration_s=args.duration_s, lna=args.lna, vga=args.vga,
             power_mw=args.power, notes=args.notes,
-            distance_m=args.distance_m, env=args.env, los=args.los,
+            distance_m=args.distance_m, environment=args.environment,
+            los=args.los, label=args.label, condition=args.condition,
+            elrs_profile=args.elrs_profile, contributor=args.contributor,
             antenna=args.antenna, path=rel_path,
             session=session_name, index=0, sha256="(dry-run)",
             timestamp=datetime.now(timezone.utc).isoformat(timespec="seconds"),
