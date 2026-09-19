@@ -355,6 +355,35 @@ def test_elrs_profile_warning():
         assert "--elrs-profile" in err.getvalue()
 
 
+def test_unmapped_freq_rejected_before_capture():
+    # 3000 MHz is a valid integer frequency with NO band mapping: it must
+    # fail validation-first (rc 2) so nothing is orphaned — no capture run,
+    # no session dirs, no manifest write, and the dry-run shows the same
+    # clean error instead of a traceback.
+    with _fake_repo_ctx(), \
+         contextlib.redirect_stdout(io.StringIO()):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc = capture.main(["elrs-bench", "--freq-mhz", "3000",
+                               "--duration-s", "1",
+                               "--label", "elrs", "--condition", "bench"])
+        assert rc == 2
+        assert "no bench band" in err.getvalue()
+        assert list(Path("data").rglob("*")) == []   # nothing created
+        assert not Path("manifest.json").exists()
+        # dry-run variant: same rejection, no traceback, no preview output
+        err2 = io.StringIO()
+        out2 = io.StringIO()
+        with contextlib.redirect_stderr(err2), \
+             contextlib.redirect_stdout(out2):
+            rc = capture.main(["elrs-bench", "--freq-mhz", "3000",
+                               "--dry-run", "--duration-s", "1",
+                               "--label", "elrs", "--condition", "bench"])
+        assert rc == 2
+        assert "no bench band" in err2.getvalue()
+        assert "hackrf_transfer" not in out2.getvalue()   # no preview
+
+
 if __name__ == "__main__":
     import sys
 

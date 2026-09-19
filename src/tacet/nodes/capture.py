@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from tacet.loaders import manifest as manifest_mod
+from tacet.loaders.migration import band_for_freq_hz
 
 FS = 20_000_000  # Msps, bytes/s = 2 * FS (cs8)
 BYTES_PER_SAMPLE = 2
@@ -34,15 +35,7 @@ PROTOCOL_BY_SCENARIO = {
 
 def band_for_freq_mhz(mhz: float) -> str:
     """Physical band for a center frequency (MHz); never a class label."""
-    if 2400 <= mhz <= 2500:
-        return "2.4 GHz ISM"
-    if 5100 <= mhz <= 5250:
-        return "5.1 GHz EU"
-    if 5700 <= mhz <= 5900:
-        return "5.8 GHz ISM"
-    if 470 <= mhz <= 860:
-        return "UHF DVB-T"
-    raise ValueError(f"no bench band maps to {mhz} MHz")
+    return band_for_freq_hz(float(mhz) * 1e6)
 
 
 SCENARIOS = {
@@ -346,6 +339,9 @@ def main(argv=None) -> int:
         # o4-scan resolves its center from the dwell scan below.
         try:
             args.freq_mhz = build_center_hz(args.scenario, args)
+            # Unmapped frequencies must fail BEFORE any hardware run,
+            # session directory or dry-run output (zero-orphan invariant).
+            band_for_freq_mhz(args.freq_mhz)
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
@@ -364,6 +360,7 @@ def main(argv=None) -> int:
             return 0
         try:
             freq_mhz = build_center_hz(args.scenario, args)
+            band_for_freq_mhz(freq_mhz)  # unmapped freqs fail before output
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2

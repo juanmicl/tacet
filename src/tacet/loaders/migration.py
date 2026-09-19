@@ -3,10 +3,11 @@
 Rules (from the manifest v2 spec):
 
 - Flat list -> wrapper ``{"schema_version": "2.0", "recordings": [...]}``.
-- ``protocol: "noise"`` entries: band="2.4 GHz ISM" (band is ALWAYS the
-  physical band, never a class label), label="background",
+- ``protocol: "noise"`` entries: band derived from center_freq_hz (band is
+  ALWAYS the physical band, never a class label), label="background",
   condition="tx_off", distance_m=null, los=null.
-- ``protocol: "elrs"`` entries: label="elrs", condition="bench",
+- ``protocol: "elrs"`` entries: band derived from center_freq_hz,
+  label="elrs", condition="bench",
   distance_m=1.0 (operator notes say "bench ~1m"), los=true,
   elrs_profile=null (was not logged; not fabricated).
 - Every entry: environment="indoor_bench", contributor="juanmicl",
@@ -28,6 +29,24 @@ _KEY_ORDER = (
 )
 
 
+def band_for_freq_hz(hz: float) -> str:
+    """Physical band for a center frequency in Hz (never a class label).
+
+    Single source of the bench band ranges; the capture CLI's
+    ``band_for_freq_mhz`` delegates here.
+    """
+    mhz = hz / 1e6
+    if 2400 <= mhz <= 2500:
+        return "2.4 GHz ISM"
+    if 5100 <= mhz <= 5250:
+        return "5.1 GHz EU"
+    if 5700 <= mhz <= 5900:
+        return "5.8 GHz ISM"
+    if 470 <= mhz <= 860:
+        return "UHF DVB-T"
+    raise ValueError(f"no bench band maps to {mhz:g} MHz")
+
+
 def migrate_entry(entry: dict) -> dict:
     """Return the v2 form of one entry; entries already at v2 pass through."""
     e = dict(entry)
@@ -35,12 +54,13 @@ def migrate_entry(entry: dict) -> dict:
         return {k: e[k] for k in _KEY_ORDER if k in e}
     protocol = e.get("protocol")
     if protocol == "noise":
-        e["band"] = "2.4 GHz ISM"
+        e["band"] = band_for_freq_hz(e["center_freq_hz"])
         e["label"] = "background"
         e["condition"] = "tx_off"
         e["distance_m"] = None
         e["los"] = None
     elif protocol == "elrs":
+        e["band"] = band_for_freq_hz(e["center_freq_hz"])
         e["label"] = "elrs"
         e["condition"] = "bench"
         e["distance_m"] = 1.0

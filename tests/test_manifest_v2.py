@@ -16,11 +16,13 @@ from tacet.nodes import manifest_cli
 
 GOLDEN = Path(__file__).resolve().parent / "golden" / "manifest_v2.json"
 
-# Fields added by the v2 migration (stripped to derive a v1 fixture).
+# Fields added/rewritten by the v2 migration (stripped to derive a v1
+# fixture; band included so the reproduction test covers the migration's
+# band derivation rather than a pre-migrated value).
 V2_ONLY_FIELDS = (
-    "schema_version", "label", "condition", "distance_m", "environment",
-    "los", "elrs_profile", "contributor", "source", "consent",
-    "site_anonymized",
+    "schema_version", "band", "label", "condition", "distance_m",
+    "environment", "los", "elrs_profile", "contributor", "source",
+    "consent", "site_anonymized",
 )
 
 
