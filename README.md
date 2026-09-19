@@ -69,7 +69,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | RF signature | Control & video links (ELRS, DJI OFDM, analog) | 0.3–2 km | €60–400 |
 | Acoustic array | Rotor harmonics; works against RF-silent drones | 100–300 m | €30 |
-| Passive radar (DVB-T) | Kinematics of any airborne reflector | 0.5–3 km | €180 |
+| Passive radar (DVB-T) | Kinematics of airborne reflectors; propeller micro-Doppler for small drones | 0.5–3 km for large targets; FPV-size: shorter, to be measured | €180 |
 | Remote ID sniffer | Compliant UAVs (cooperative layer) | 100–500 m | €8 |
 | Fusion tracker | Single coherent track from all sensors (Stone Soup) | — | — |
 
