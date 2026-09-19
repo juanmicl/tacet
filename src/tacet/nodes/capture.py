@@ -21,6 +21,7 @@ BYTES_PER_SAMPLE = 2
 
 SCAN_BANDS_MHZ = [(5_170, 5_250), (5_750, 5_850)]
 SCAN_STEP_MHZ = 10
+SCAN_SETTLE_S = 0.1  # discarded after each retune (PLL/AGC settling)
 ELRS_DEFAULT_MHZ = 2_440
 
 PROTOCOL_BY_SCENARIO = {
@@ -100,8 +101,16 @@ def build_argv(center_hz: int, n_samples: int, lna: int, vga: int, path: str):
 
 
 def build_entry(args: dict) -> dict:
+    session = args.get("session")
+    if session is not None:
+        # Session-scoped id: the UTC session directory name is unique, so
+        # consecutive bench sessions cannot collide on the same scenario
+        # (a bare path stem would).
+        id_ = f"{session}_{args['scenario']}_{int(args.get('index', 0)):03d}"
+    else:
+        id_ = Path(args["path"]).stem
     entry = {
-        "id": Path(args["path"]).stem,
+        "id": id_,
         "timestamp": args["timestamp"],
         "device": "hackrf",
         "protocol": PROTOCOL_BY_SCENARIO[args["scenario"]],
@@ -192,6 +201,7 @@ def _capture_once(ns, session_dir: Path, index: int):
         lna=ns.lna, vga=ns.vga, power_mw=ns.power, notes=ns.notes + warn,
         distance_m=ns.distance_m, env=ns.env, los=ns.los,
         antenna=ns.antenna, path=str(path),
+        session=session_dir.name, index=index,
         sha256=manifest_mod.compute_sha256(path), timestamp=ts))
     manifest_mod.append_entry(entry)
     print(f"captured {path} ({actual} bytes){warn}")
@@ -227,6 +237,7 @@ def o4_scan(ns, session_dir: Path):
         z = load_cs8(str(dwell))
         dwell.unlink(missing_ok=True)   # discard the dwell capture
         dwell.with_suffix(".log").unlink(missing_ok=True)
+        z = z[int(SCAN_SETTLE_S * FS):]  # settle discard after the retune
         if z.size == 0:
             continue
         _, p = features.welch_psd(z, float(FS))
@@ -265,7 +276,8 @@ def main(argv=None) -> int:
     parser.add_argument("--distance-m", type=float, default=None)
     parser.add_argument("--env", default=None, choices=["urban", "rural", "open"])
     parser.add_argument("--los", default=None, choices=["los", "nlos"])
-    parser.add_argument("--antenna", default="")
+    parser.add_argument(
+        "--antenna", default="dual-band 2.4/5.8 SMA")
     parser.add_argument(
         "--dwell-s", type=float, default=0.5,
         help="seconds per bin for o4-scan",
@@ -323,14 +335,16 @@ def main(argv=None) -> int:
             print(f"error: {exc}", file=sys.stderr)
             return 2
         n_samples = int(round(args.duration_s * FS))
-        rel_path = (
-            f"data/signature_capture/{args.scenario}/{args.scenario}_000.cs8")
+        session_name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        rel_path = (f"data/signature_capture/{session_name}/"
+                    f"{args.scenario}_000.cs8")
         entry = build_entry(dict(
             scenario=args.scenario, freq_mhz=freq_mhz,
             duration_s=args.duration_s, lna=args.lna, vga=args.vga,
             power_mw=args.power, notes=args.notes,
             distance_m=args.distance_m, env=args.env, los=args.los,
-            antenna=args.antenna, path=rel_path, sha256="(dry-run)",
+            antenna=args.antenna, path=rel_path,
+            session=session_name, index=0, sha256="(dry-run)",
             timestamp=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         ))
         print(f"repo root: {root}")

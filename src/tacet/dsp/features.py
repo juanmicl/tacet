@@ -68,6 +68,8 @@ def occupied_bandwidth(freqs_hz, psd_linear, percent=99.0):
     """
     freqs = np.asarray(freqs_hz, dtype=float)
     p = np.clip(np.asarray(psd_linear, dtype=float), 0.0, None)
+    keep = _dc_mask(p.size)   # module-wide invariant: DC bins never count
+    p, freqs = p[keep], freqs[keep]
     total = p.sum()
     if total <= 0 or p.size < 2:
         return 0.0, float(freqs[0]), float(freqs[-1])

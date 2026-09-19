@@ -5,6 +5,8 @@ import io
 import json
 import os
 import tempfile
+from datetime import datetime as _real_datetime
+from datetime import timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -200,6 +202,71 @@ def test_control_scenario_tx_off():
         rc = capture.main(["control", "--freq-mhz", "2440", "--power", "100"])
     assert rc == 2
     assert "--power" in err.getvalue()
+
+
+def _shifted_clock(seconds):
+    """Drop-in datetime class whose now() is shifted by `seconds`."""
+    class _Shifted(_real_datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return _real_datetime.now(tz) + timedelta(seconds=seconds)
+    return _Shifted
+
+
+def test_two_sessions_no_id_collision():
+    # C1: two bench sessions of the same scenario must both append (the
+    # session-scoped id prevents the duplicate-id crash and orphans).
+    with _fake_repo_ctx(), \
+         contextlib.redirect_stdout(io.StringIO()), \
+         contextlib.redirect_stderr(io.StringIO()):
+        with mock.patch.object(capture, "datetime", _shifted_clock(0)):
+            assert capture.main(["elrs-bench", "--duration-s", "1"]) == 0
+        with mock.patch.object(capture, "datetime", _shifted_clock(3600)):
+            assert capture.main(["elrs-bench", "--duration-s", "1"]) == 0
+        entries = json.loads(Path("manifest.json").read_text(encoding="utf-8"))
+        assert len(entries) == 2
+        ids = [e["id"] for e in entries]
+        assert len(set(ids)) == 2                 # no id collision
+        assert all(i.endswith("_elrs-bench_000") for i in ids)
+        files = sorted(Path("data/signature_capture").rglob("*.cs8"))
+        assert len(files) == 2                    # both captures kept
+        # No orphans: every capture maps to exactly one manifest entry.
+        assert ({e["channels"][0]["path"] for e in entries}
+                == {str(f) for f in files})
+        for f in files:                           # id names its session
+            assert f"{f.parent.name}_elrs-bench_000" in ids
+
+
+def test_o4_scan_picks_winner_and_cleans_failed_bin():
+    # I4: with 2 bins (first fails, second has signal) the scan must pick
+    # the healthy bin and leave no dwell artifacts behind.
+    bins = [5170, 5800]
+
+    def selective_run(argv, **kw):
+        path = Path(argv[argv.index("-r") + 1])
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.name.startswith("scan_5170"):
+            path.write_bytes(b"PARTIAL")
+            class R:  # fake failed result
+                returncode = 1
+            return R()
+        n = int(argv[argv.index("-n") + 1])
+        path.write_bytes(b"\0" * (2 * n))
+        class R:  # fake success
+            returncode = 0
+        return R()
+
+    with _fake_repo_ctx(), contextlib.redirect_stdout(io.StringIO()):
+        with mock.patch.object(capture, "o4_scan_bins", lambda: bins), \
+             mock.patch.object(capture.subprocess, "run", selective_run):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = capture.main(["o4-scan", "--duration-s", "1"])
+        assert rc == 0
+        entries = json.loads(Path("manifest.json").read_text(encoding="utf-8"))
+        assert len(entries) == 1
+        assert entries[0]["center_freq_hz"] == 5.8e9   # winner, not failed bin
+        assert not list(Path("data").rglob("scan_*"))  # zero dwell artifacts
 
 
 if __name__ == "__main__":

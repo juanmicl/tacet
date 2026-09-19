@@ -71,7 +71,7 @@ Notes:
 
 ## Post-session verification
 
-1. `uv run python -m tests` — green (26+ self-tests).
+1. `uv run python -m tests` — green (the full synthetic suite).
 2. Manifest entry count matches the number of captures you intended:
    `uv run python -c "from tacet.loaders import manifest as m; print(len(m.query(purpose='signature_capture')))"`.
 3. Review byte-count warnings: any `operator_notes` containing
