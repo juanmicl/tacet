@@ -14,6 +14,7 @@ Usage:
 """
 
 import argparse
+import ast
 import base64
 import contextlib
 import io
@@ -65,11 +66,23 @@ def execute_notebook(nb: dict) -> bool:
         cell["outputs"] = []
         out, err = io.StringIO(), io.StringIO()
         cell_ok = True
+        result = None
         try:
             code = cell["source"]
+            # Split a trailing expression so it can be displayed like a
+            # Jupyter result cell (e.g. a bare DataFrame).
+            tree = ast.parse(code)
+            tail = None
+            if tree.body and isinstance(tree.body[-1], ast.Expr):
+                tail = ast.Expression(tree.body[-1].value)
+                tree.body = tree.body[:-1]
             with contextlib.redirect_stdout(out), \
                     contextlib.redirect_stderr(err):
-                exec(compile(code, f"<cell {count}>", "exec"), ns)  # noqa: S102
+                if tree.body:
+                    exec(compile(tree, f"<cell {count}>", "exec"), ns)  # noqa: S102
+                if tail is not None:
+                    result = eval(compile(tail, f"<cell {count}>", "eval"),
+                                  ns)  # noqa: S102
         except Exception as exc:  # noqa: BLE001 - reported as cell output
             cell_ok = False
             all_ok = False
@@ -78,6 +91,13 @@ def execute_notebook(nb: dict) -> bool:
                 "ename": type(exc).__name__,
                 "evalue": str(exc),
                 "traceback": traceback.format_exc().splitlines(),
+            })
+        if result is not None:
+            cell["outputs"].append({
+                "output_type": "execute_result",
+                "execution_count": count,
+                "data": {"text/plain": repr(result)},
+                "metadata": {},
             })
         cell["outputs"].append(_stream_output("stdout", out.getvalue()))
         cell["outputs"].append(_stream_output("stderr", err.getvalue()))
