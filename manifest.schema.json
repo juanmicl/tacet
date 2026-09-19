@@ -1,11 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "tacet-recording-manifest-v1",
-  "title": "Tacet recording manifest entry",
-  "description": "Data contract for one recording session entry in manifest.json. One entry may carry 1-2 channels (e.g. the two coherent RX channels of a Pluto+).",
+  "$id": "tacet-recording-manifest-v2",
+  "title": "Tacet recording manifest entry (v2)",
+  "description": "Data contract for one recording session entry in manifest.json. One entry may carry 1-2 channels (e.g. the two coherent RX channels of a Pluto+). v2 adds governance fields (contributor, source, consent, site_anonymized) and proper experiment labeling: band is ALWAYS the physical band, label is the ML signal class, condition is the experimental condition.",
   "type": "object",
+  "additionalProperties": false,
   "required": [
     "id",
+    "schema_version",
     "timestamp",
     "device",
     "protocol",
@@ -16,9 +18,23 @@
     "duration_s",
     "channels",
     "antenna",
-    "operator_notes"
+    "operator_notes",
+    "band",
+    "label",
+    "condition",
+    "distance_m",
+    "environment",
+    "los",
+    "contributor",
+    "source",
+    "consent",
+    "site_anonymized"
   ],
   "properties": {
+    "schema_version": {
+      "const": "2.0",
+      "description": "Manifest contract version this entry conforms to."
+    },
     "id": {
       "type": "string",
       "minLength": 1,
@@ -32,7 +48,8 @@
       "enum": ["hackrf", "pluto_plus", "rtl_sdr", "esp32", "other"]
     },
     "protocol": {
-      "enum": ["elrs", "dji_o4", "dji_o3", "analog_fpv", "fm_carrier", "dvbt", "noise", "other"]
+      "enum": ["elrs", "dji_o4", "dji_o3", "analog_fpv", "fm_carrier", "dvbt", "noise", "other"],
+      "description": "Physical protocol present in the recording (label is the ML class)."
     },
     "purpose": {
       "enum": ["coherence_cal", "signature_capture", "range_test", "dataset_baseline", "other"]
@@ -58,6 +75,7 @@
       "maxItems": 2,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["path", "sha256"],
         "properties": {
           "path": {
@@ -78,23 +96,39 @@
       "type": "string"
     },
     "band": {
-      "type": "string"
+      "enum": ["2.4 GHz ISM", "5.8 GHz ISM", "5.1 GHz EU", "UHF DVB-T"],
+      "description": "ALWAYS the physical band of center_freq_hz, never a class label."
+    },
+    "label": {
+      "enum": ["elrs", "dji_o4", "analog_fpv", "background", "interference"],
+      "description": "ML signal class present in the recording."
+    },
+    "condition": {
+      "enum": ["bench", "flying", "walk", "tx_off"],
+      "description": "Experimental condition of the capture."
+    },
+    "distance_m": {
+      "type": ["number", "null"],
+      "description": "TX-RX distance in meters; null if not meaningful."
+    },
+    "environment": {
+      "enum": ["indoor_bench", "rural", "urban", "open_field"]
+    },
+    "los": {
+      "type": ["boolean", "null"],
+      "description": "Line of sight; null if not meaningful."
+    },
+    "elrs_profile": {
+      "type": ["string", "null"],
+      "description": "ELRS packet rate / mode (e.g. D500, 100Hz); log on every ELRS capture. Absent/null when not applicable or not logged."
     },
     "tx_power_dbm": {
       "type": "number",
       "description": "Known transmitter power, if any (receive-only project: usually absent)."
     },
-    "distance_m": {
-      "type": "number"
-    },
-    "environment": {
-      "enum": ["urban", "rural", "open"]
-    },
-    "los_nlos": {
-      "enum": ["los", "nlos"]
-    },
     "gain": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "mode": { "enum": ["manual", "agc"] },
         "rx1_db": { "type": "number" },
@@ -105,6 +139,7 @@
     },
     "rf_chain": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "splitter": {
           "type": "string"
@@ -113,6 +148,23 @@
           "type": "number"
         }
       }
+    },
+    "contributor": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Who recorded/contributed this capture (governance)."
+    },
+    "source": {
+      "enum": ["own_capture", "public_dataset", "community"],
+      "description": "Provenance of the recording (governance)."
+    },
+    "consent": {
+      "enum": ["private", "cc-by-4.0", "internal"],
+      "description": "License/sharing consent for the recording (governance)."
+    },
+    "site_anonymized": {
+      "type": "boolean",
+      "description": "True when no site-identifying information is present (governance)."
     }
   }
 }

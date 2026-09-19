@@ -42,17 +42,31 @@ def compute_sha256(path: str, chunk_bytes: int = 1 << 20) -> str:
 
 def _validate_against_schema(value: Any, schema: dict, where: str) -> None:
     """Validate ``value`` against the draft-07 subset used by our schema."""
+    if "const" in schema and value != schema["const"]:
+        raise ValueError(f"{where}: expected {schema['const']!r}, got {value!r}")
     if "enum" in schema:
         if value not in schema["enum"]:
             raise ValueError(f"{where}: {value!r} not in allowed enum {schema['enum']}")
     expected = schema.get("type")
     if expected is not None:
-        py = _SCALAR_TYPES[expected]
-        if expected == "number" and isinstance(value, bool):
-            raise ValueError(f"{where}: expected number, got bool")
-        if not isinstance(value, py):
+        types = [expected] if isinstance(expected, str) else list(expected)
+        matched = False
+        for t in types:
+            if t == "null":
+                if value is None:
+                    matched = True
+                    break
+                continue
+            py = _SCALAR_TYPES[t]
+            if t == "number" and isinstance(value, bool):
+                continue  # bool is an int in Python but never a number here
+            if isinstance(value, py):
+                matched = True
+                break
+        if not matched:
+            names = "/".join(str(t) for t in types)
             raise ValueError(
-                f"{where}: expected {expected}, got {type(value).__name__}"
+                f"{where}: expected {names}, got {type(value).__name__}"
             )
     if "exclusiveMinimum" in schema and value <= schema["exclusiveMinimum"]:
         raise ValueError(f"{where}: must be > {schema['exclusiveMinimum']}")
@@ -67,7 +81,12 @@ def _validate_against_schema(value: Any, schema: dict, where: str) -> None:
         for req in schema.get("required", []):
             if req not in value:
                 raise ValueError(f"{where}: missing required field '{req}'")
-        for key, sub in schema.get("properties", {}).items():
+        props = schema.get("properties", {})
+        if schema.get("additionalProperties") is False:
+            for key in value:
+                if key not in props:
+                    raise ValueError(f"{where}: unexpected field '{key}'")
+        for key, sub in props.items():
             if key in value:
                 _validate_against_schema(value[key], sub, f"{where}.{key}")
     if expected == "array":
