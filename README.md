@@ -102,9 +102,12 @@ flowchart LR
 - Own dataset: labeled IQ and acoustic recordings of modern FPV links
   (ELRS, DJI O4) at known distances, powers, and environments. To our
   knowledge no public dataset covers these; release policy is TBD.
-- All recordings follow a strict manifest schema (device, protocol,
-  distance, TX power, antenna, environment, LOS/NLOS, license-consistent
-  source).
+- All recordings follow a strict manifest schema (v2 wrapper with
+  `schema_version` + `recordings`). Each entry carries device, protocol,
+  physical band, ML label, condition, distance, TX power, antenna,
+  environment, LOS, ELRS profile when applicable, and the governance
+  fields (`contributor`, `source`, `consent`, `site_anonymized`) — no
+  entry without them; `tacet manifest validate` enforces the contract.
 
 ```
 repo/

@@ -116,6 +116,45 @@ manifest.json   # recording index (tracked in git)
   WiFi router). Do not resurrect its logic. Only salvageable idea: DJI/Parrot
   OUI prefix lists for the WiFi layer.
 
+## Open-source & data governance model (read before structuring anything)
+
+This repo is the open research core of a broader system. It is deliberately
+public and MIT-licensed: reference implementation for low-cost passive drone
+detection (benchmarks, honest measurements, community contributions).
+
+### What belongs here vs what never enters this repo
+
+| Belongs here (public) | NEVER goes in this repo |
+|---|---|
+| Detection/DSP algorithms, loaders, trackers | Trained model weights |
+| Bench notebooks, ROC curves, range measurements | Client or deployment data |
+| Manifest schema + data governance tooling | Site calibrations |
+| Node firmware prototypes | Deployment/provisioning code |
+| Documentation of experiments | Business docs, pricing, strategy |
+
+If a change requires any of the right column, stop and flag it.
+
+### Data governance rules (enforced in code)
+
+- Every recording has governance fields in the manifest: `contributor`,
+  `source`, `consent`, `site_anonymized`. No entry without them.
+- Sharing recordings with the community dataset is opt-in only via an
+  explicit user command. No background telemetry, no silent uploads. If a
+  module wants network access, it must ask.
+- Community contributions are credited in the manifest and stay under the
+  license recorded in `consent`.
+- Any client-derived data must be anonymized before storage: strip site
+  coordinates, client identifiers, anything linkable to a person or site.
+- Public dataset loaders record provenance per file and respect their
+  licenses.
+
+### Repo hygiene
+
+- This repo is also a credibility artifact: prefer fewer, well-measured
+  claims over many unverified ones. If it wasn't measured in a notebook in
+  `notebooks/`, it doesn't exist.
+- External contributions welcome via normal PRs; no CLA.
+
 ## Data strategy
 
 - Public datasets for pipeline validation only:

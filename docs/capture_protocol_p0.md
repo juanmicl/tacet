@@ -49,12 +49,12 @@ Run `--dry-run` first for any new configuration: it prints the exact
 
 | Command | What it is for |
 | --- | --- |
-| `uv run tacet capture o4-scan --dwell-s 0.5` | find which 5.1/5.8 GHz bin the O4 link uses (20 bins, dwell 0.5 s each) |
-| `uv run tacet capture o4-fixed --freq-mhz 5800` | record the O4 link on the scanned winner (also try 5180: EU O4 also lives at 5.1 GHz) |
-| `uv run tacet capture elrs-bench --power 100 --freq-mhz 2420` | ELRS control link at the recorded TX power |
-| `uv run tacet capture elrs-bench --power 100 --freq-mhz 2450` | ELRS, second ISM window |
-| `uv run tacet capture elrs-bench --power 100 --freq-mhz 2465` | ELRS, third ISM window |
-| `uv run tacet capture control --freq-mhz 2440` | ONE TX-OFF control capture per session |
+| `uv run tacet capture o4-scan --dwell-s 0.5 --label dji_o4 --condition bench` | find which 5.1/5.8 GHz bin the O4 link uses (20 bins, dwell 0.5 s each) |
+| `uv run tacet capture o4-fixed --freq-mhz 5800 --label dji_o4 --condition bench` | record the O4 link on the scanned winner (also try `--freq-mhz 5180`: EU O4 also lives at 5.1 GHz) |
+| `uv run tacet capture elrs-bench --power 100 --freq-mhz 2420 --label elrs --condition bench --elrs-profile D500` | ELRS control link at the recorded TX power |
+| `uv run tacet capture elrs-bench --power 100 --freq-mhz 2450 --label elrs --condition bench --elrs-profile D500` | ELRS, second ISM window |
+| `uv run tacet capture elrs-bench --power 100 --freq-mhz 2465 --label elrs --condition bench --elrs-profile D500` | ELRS, third ISM window |
+| `uv run tacet capture control --freq-mhz 2440 --label background --condition tx_off` | ONE TX-OFF control capture per session |
 
 Notes:
 
@@ -65,9 +65,20 @@ Notes:
   session, same band and gains as the signal captures. Features are only
   trusted as a difference against it: noise, spurs and background carriers
   live in the control too.
-- Every command accepts `--notes`, `--distance-m`, `--env`, `--los`,
-  `--antenna`: fill them in, they land in the manifest entry and are the
-  difference between data and archives.
+- `--label` and `--condition` are REQUIRED (manifest v2): label is the
+  ML class in the recording (`elrs`, `dji_o4`, `background`, ...);
+  condition is the experimental setup (`bench`, `tx_off`, ...). `band` is
+  derived from `--freq-mhz` and is always the physical band.
+- ELRS captures warn when `--elrs-profile` is missing; log the packet
+  rate/mode (e.g. `D500`) so captures stay comparable.
+- Every command accepts `--notes`, `--distance-m`, `--environment`
+  (default `indoor_bench`), `--los`/`--no-los`, `--antenna`: fill them
+  in, they land in the manifest entry and are the difference between
+  data and archives.
+- After a session, `uv run tacet manifest validate --check-files` must
+  pass (id uniqueness, schema, checksums); governance fields
+  (`contributor`, `source`, `consent`, `site_anonymized`) are filled
+  with sane defaults and can be reviewed in the manifest entry.
 
 ## Post-session verification
 
