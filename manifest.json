@@ -1,257 +1,365 @@
-[
-  {
-    "id": "20260919T003427Z_control_000",
-    "timestamp": "2026-09-19T00:34:27+00:00",
-    "device": "hackrf",
-    "protocol": "noise",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2440000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 1.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T003427Z/control_000.cs8",
-        "sha256": "3bcb7ec270313cd4ed19d318f4e33bed7382fdc44ba366bac12a84424b35d488"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "",
-    "band": "control",
-    "gain": {
-      "mode": "manual",
-      "lna_db": 32,
-      "vga_db": 32
+{
+  "schema_version": "2.0",
+  "recordings": [
+    {
+      "id": "20260919T003427Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:34:27+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2440000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 1.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T003427Z/control_000.cs8",
+          "sha256": "3bcb7ec270313cd4ed19d318f4e33bed7382fdc44ba366bac12a84424b35d488"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "",
+      "band": "2.4 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 32,
+        "vga_db": 32
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T003513Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:35:13+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2440000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 1.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T003513Z/control_000.cs8",
+          "sha256": "a3212a6f0cbf9e0b06b35869ad54581c720de8737ec149e72950d20c0c1a56b7"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "",
+      "band": "2.4 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 16,
+        "vga_db": 16
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T004638Z_elrs-bench_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:46:38+00:00",
+      "device": "hackrf",
+      "protocol": "elrs",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2440000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T004638Z/elrs-bench_000.cs8",
+          "sha256": "2e2a5bb8ab85b50de29b4ef921c318242f19639bf640924288e7be588bf4018d"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "Boxer only, drone OFF, bench ~1m",
+      "band": "2.4 GHz ISM",
+      "label": "elrs",
+      "condition": "bench",
+      "distance_m": 1.0,
+      "environment": "indoor_bench",
+      "los": true,
+      "elrs_profile": null,
+      "tx_power_dbm": 20.0,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 16,
+        "vga_db": 16
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T004805Z_elrs-bench_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:48:05+00:00",
+      "device": "hackrf",
+      "protocol": "elrs",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2440000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T004805Z/elrs-bench_000.cs8",
+          "sha256": "6b1fee060e4df75eaf3868e75473119828e8a0ec9de4c8c1f78a37cfaf0dd720"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "Boxer only, drone OFF, bench ~1m, gain 8/8 for clean QC",
+      "band": "2.4 GHz ISM",
+      "label": "elrs",
+      "condition": "bench",
+      "distance_m": 1.0,
+      "environment": "indoor_bench",
+      "los": true,
+      "elrs_profile": null,
+      "tx_power_dbm": 20.0,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T005239Z_elrs-bench_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:52:39+00:00",
+      "device": "hackrf",
+      "protocol": "elrs",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2450000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T005239Z/elrs-bench_000.cs8",
+          "sha256": "48b9e7df0674c867d24970ab83e4ce05cf82a0261c3f1c5df2a3219705d2192d"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "Boxer only, drone OFF, bench ~1m, window 2450",
+      "band": "2.4 GHz ISM",
+      "label": "elrs",
+      "condition": "bench",
+      "distance_m": 1.0,
+      "environment": "indoor_bench",
+      "los": true,
+      "elrs_profile": null,
+      "tx_power_dbm": 20.0,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T005242Z_elrs-bench_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:52:42+00:00",
+      "device": "hackrf",
+      "protocol": "elrs",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2465000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T005242Z/elrs-bench_000.cs8",
+          "sha256": "6964ef593c461c8a26ee74cf6cea578a09c329c2c4e2fd56a9333c07b53fb06d"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "Boxer only, drone OFF, bench ~1m, window 2465",
+      "band": "2.4 GHz ISM",
+      "label": "elrs",
+      "condition": "bench",
+      "distance_m": 1.0,
+      "environment": "indoor_bench",
+      "los": true,
+      "elrs_profile": null,
+      "tx_power_dbm": 20.0,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T005401Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:54:01+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2440000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T005401Z/control_000.cs8",
+          "sha256": "29060c6a980ef44334780d2c48351ce76767c7887c298cfa36113c79ed4befc9"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "TX-OFF matched control for window 2440, gain 8/8",
+      "band": "2.4 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T005404Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:54:04+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2450000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T005404Z/control_000.cs8",
+          "sha256": "9b55e5dc4ee047ea65797b91dc78b339d75bde9e2cb804e92997faf03672916c"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "TX-OFF matched control for window 2450, gain 8/8",
+      "band": "2.4 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T005408Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:54:08+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2465000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T005408Z/control_000.cs8",
+          "sha256": "c1c46e2e75576c92cd817b561ce18598607aad1abfb1a144ea5647996399d67d"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "TX-OFF matched control for window 2465, gain 8/8",
+      "band": "2.4 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
+    },
+    {
+      "id": "20260919T005913Z_elrs-bench_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-19T00:59:13+00:00",
+      "device": "hackrf",
+      "protocol": "elrs",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2450000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260919T005913Z/elrs-bench_000.cs8",
+          "sha256": "70160744741ed456bf30be14bd3ed8931e8801436d02728d9a098e5e2d8f4b66"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "Boxer only, re-scan of quiet window 2450 (FHSS lumpiness test)",
+      "band": "2.4 GHz ISM",
+      "label": "elrs",
+      "condition": "bench",
+      "distance_m": 1.0,
+      "environment": "indoor_bench",
+      "los": true,
+      "elrs_profile": null,
+      "tx_power_dbm": 20.0,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      },
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true
     }
-  },
-  {
-    "id": "20260919T003513Z_control_000",
-    "timestamp": "2026-09-19T00:35:13+00:00",
-    "device": "hackrf",
-    "protocol": "noise",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2440000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 1.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T003513Z/control_000.cs8",
-        "sha256": "a3212a6f0cbf9e0b06b35869ad54581c720de8737ec149e72950d20c0c1a56b7"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "",
-    "band": "control",
-    "gain": {
-      "mode": "manual",
-      "lna_db": 16,
-      "vga_db": 16
-    }
-  },
-  {
-    "id": "20260919T004638Z_elrs-bench_000",
-    "timestamp": "2026-09-19T00:46:38+00:00",
-    "device": "hackrf",
-    "protocol": "elrs",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2440000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 3.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T004638Z/elrs-bench_000.cs8",
-        "sha256": "2e2a5bb8ab85b50de29b4ef921c318242f19639bf640924288e7be588bf4018d"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "Boxer only, drone OFF, bench ~1m",
-    "band": "2.4 GHz ISM",
-    "tx_power_dbm": 20.0,
-    "gain": {
-      "mode": "manual",
-      "lna_db": 16,
-      "vga_db": 16
-    }
-  },
-  {
-    "id": "20260919T004805Z_elrs-bench_000",
-    "timestamp": "2026-09-19T00:48:05+00:00",
-    "device": "hackrf",
-    "protocol": "elrs",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2440000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 3.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T004805Z/elrs-bench_000.cs8",
-        "sha256": "6b1fee060e4df75eaf3868e75473119828e8a0ec9de4c8c1f78a37cfaf0dd720"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "Boxer only, drone OFF, bench ~1m, gain 8/8 for clean QC",
-    "band": "2.4 GHz ISM",
-    "tx_power_dbm": 20.0,
-    "gain": {
-      "mode": "manual",
-      "lna_db": 8,
-      "vga_db": 8
-    }
-  },
-  {
-    "id": "20260919T005239Z_elrs-bench_000",
-    "timestamp": "2026-09-19T00:52:39+00:00",
-    "device": "hackrf",
-    "protocol": "elrs",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2450000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 3.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T005239Z/elrs-bench_000.cs8",
-        "sha256": "48b9e7df0674c867d24970ab83e4ce05cf82a0261c3f1c5df2a3219705d2192d"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "Boxer only, drone OFF, bench ~1m, window 2450",
-    "band": "2.4 GHz ISM",
-    "tx_power_dbm": 20.0,
-    "gain": {
-      "mode": "manual",
-      "lna_db": 8,
-      "vga_db": 8
-    }
-  },
-  {
-    "id": "20260919T005242Z_elrs-bench_000",
-    "timestamp": "2026-09-19T00:52:42+00:00",
-    "device": "hackrf",
-    "protocol": "elrs",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2465000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 3.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T005242Z/elrs-bench_000.cs8",
-        "sha256": "6964ef593c461c8a26ee74cf6cea578a09c329c2c4e2fd56a9333c07b53fb06d"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "Boxer only, drone OFF, bench ~1m, window 2465",
-    "band": "2.4 GHz ISM",
-    "tx_power_dbm": 20.0,
-    "gain": {
-      "mode": "manual",
-      "lna_db": 8,
-      "vga_db": 8
-    }
-  },
-  {
-    "id": "20260919T005401Z_control_000",
-    "timestamp": "2026-09-19T00:54:01+00:00",
-    "device": "hackrf",
-    "protocol": "noise",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2440000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 3.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T005401Z/control_000.cs8",
-        "sha256": "29060c6a980ef44334780d2c48351ce76767c7887c298cfa36113c79ed4befc9"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "TX-OFF matched control for window 2440, gain 8/8",
-    "band": "control",
-    "gain": {
-      "mode": "manual",
-      "lna_db": 8,
-      "vga_db": 8
-    }
-  },
-  {
-    "id": "20260919T005404Z_control_000",
-    "timestamp": "2026-09-19T00:54:04+00:00",
-    "device": "hackrf",
-    "protocol": "noise",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2450000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 3.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T005404Z/control_000.cs8",
-        "sha256": "9b55e5dc4ee047ea65797b91dc78b339d75bde9e2cb804e92997faf03672916c"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "TX-OFF matched control for window 2450, gain 8/8",
-    "band": "control",
-    "gain": {
-      "mode": "manual",
-      "lna_db": 8,
-      "vga_db": 8
-    }
-  },
-  {
-    "id": "20260919T005408Z_control_000",
-    "timestamp": "2026-09-19T00:54:08+00:00",
-    "device": "hackrf",
-    "protocol": "noise",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2465000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 3.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T005408Z/control_000.cs8",
-        "sha256": "c1c46e2e75576c92cd817b561ce18598607aad1abfb1a144ea5647996399d67d"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "TX-OFF matched control for window 2465, gain 8/8",
-    "band": "control",
-    "gain": {
-      "mode": "manual",
-      "lna_db": 8,
-      "vga_db": 8
-    }
-  },
-  {
-    "id": "20260919T005913Z_elrs-bench_000",
-    "timestamp": "2026-09-19T00:59:13+00:00",
-    "device": "hackrf",
-    "protocol": "elrs",
-    "purpose": "signature_capture",
-    "center_freq_hz": 2450000000.0,
-    "sample_rate_sps": 20000000.0,
-    "format": "cs8",
-    "duration_s": 3.0,
-    "channels": [
-      {
-        "path": "data/signature_capture/20260919T005913Z/elrs-bench_000.cs8",
-        "sha256": "70160744741ed456bf30be14bd3ed8931e8801436d02728d9a098e5e2d8f4b66"
-      }
-    ],
-    "antenna": "dual-band 2.4/5.8 SMA",
-    "operator_notes": "Boxer only, re-scan of quiet window 2450 (FHSS lumpiness test)",
-    "band": "2.4 GHz ISM",
-    "tx_power_dbm": 20.0,
-    "gain": {
-      "mode": "manual",
-      "lna_db": 8,
-      "vga_db": 8
-    }
-  }
-]
+  ]
+}
