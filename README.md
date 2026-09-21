@@ -37,6 +37,20 @@ Most counter-drone products fail at three things:
 Tacet is a layered answer: three sensing modalities, each covering the blind
 spot of the others, fused into tracks with quantified uncertainty.
 
+## What the captures look like
+
+ELRS control link at 2440 MHz, received by our HackRF One at bench distance
+(~1 m, TX power 100 mW). Left: signal with the transmitter on. Right: matched
+control with nothing transmitting. The frequency-hopping pattern fills the
+20 MHz window with bursts that land well above the noise floor.
+
+![ELRS vs control](docs/img/elrs_vs_control_2440mhz.png)
+
+Measured numbers behind this capture: +13 dB median per-bin SNR, 88%
+occupied frequency bins, 35% duty cycle. Full analysis in
+[notebooks/01_bench_overview.ipynb](notebooks/01_bench_overview.ipynb)
+and [docs/p0_signature_report.md](docs/p0_signature_report.md).
+
 ## Quickstart
 
 No SDR required: tests and notebooks run on synthetic signals.
