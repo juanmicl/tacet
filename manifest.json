@@ -360,6 +360,286 @@
       "source": "own_capture",
       "consent": "private",
       "site_anonymized": true
+    },
+    {
+      "id": "20260921T161948Z_o4-scan_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-21T16:20:28+00:00",
+      "device": "hackrf",
+      "protocol": "dji_o4",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5170000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260921T161948Z/o4-scan_000.cs8",
+          "sha256": "77c862977eb5102ae8264406479d086219bf35f96567ebe2a95a139dfe6d8415"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "drone only, Boxer OFF, goggles linked, bench ~1m [o4-scan winner 5170 MHz, peak 0.01245]",
+      "band": "5.1 GHz EU",
+      "label": "dji_o4",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      }
+    },
+    {
+      "id": "20260921T162101Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-21T16:21:01+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5170000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260921T162101Z/control_000.cs8",
+          "sha256": "d2839eaa4f3c15c64d2996cb62309373f098cd536e82a7c5ecf6f57784d12957"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "TX-OFF matched control for O4 at 5170 MHz, drone disconnected",
+      "band": "5.1 GHz EU",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      }
+    },
+    {
+      "id": "20260921T162223Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-21T16:22:23+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5170000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260921T162223Z/control_000.cs8",
+          "sha256": "6182ea76b2e6ceb88b1bebe60d237fad9904d99de1956d7e41fef6ea2ea39ba8"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "TRUE TX-OFF control, drone battery DISCONNECTED",
+      "band": "5.1 GHz EU",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      }
+    },
+    {
+      "id": "20260921T162517Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-21T16:25:17+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5170000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260921T162517Z/control_000.cs8",
+          "sha256": "ac352fff8c075eefca336fed0201e40b1a0fb1448f3b961c92406063f2840931"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "ABSOLUTE zero: drone OFF, goggles OFF, nothing transmitting",
+      "band": "5.1 GHz EU",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      }
+    },
+    {
+      "id": "20260921T162700Z_o4-fixed_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-21T16:27:00+00:00",
+      "device": "hackrf",
+      "protocol": "dji_o4",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5170000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260921T162700Z/o4-fixed_000.cs8",
+          "sha256": "c27e83e0104ad34397e7588e5a10b229b3655896b3c29ea5909ae00dd7f85816"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "drone ON + goggles ON, receiving video, bench ~1m, direct capture at known freq",
+      "band": "5.1 GHz EU",
+      "label": "dji_o4",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      }
+    },
+    {
+      "id": "20260921T163809Z_o4-fixed_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-21T16:38:09+00:00",
+      "device": "hackrf",
+      "protocol": "dji_o4",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5800000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260921T163809Z/o4-fixed_000.cs8",
+          "sha256": "1963389b98e23a2192b9f48f5b7f40430a7b918b14d8969c29315a49801a1331"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "drone ON + goggles ON, 5.8 GHz band forced in goggle settings, bench ~1m",
+      "band": "5.8 GHz ISM",
+      "label": "dji_o4",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 16,
+        "vga_db": 16
+      }
+    },
+    {
+      "id": "20260921T163820Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-21T16:38:20+00:00",
+      "device": "hackrf",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5800000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260921T163820Z/control_000.cs8",
+          "sha256": "899fe9f68de7375f312bba5311168315f6dc0699e5eff0761afc4212b7e0224e"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "TX-OFF control at 5800 MHz, drone disconnected, goggles OFF",
+      "band": "5.8 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 16,
+        "vga_db": 16
+      }
+    },
+    {
+      "id": "20260921T164929Z_o4-fixed_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-09-21T16:49:29+00:00",
+      "device": "hackrf",
+      "protocol": "dji_o4",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5800000000.0,
+      "sample_rate_sps": 20000000.0,
+      "format": "cs8",
+      "duration_s": 3.0,
+      "channels": [
+        {
+          "path": "data/signature_capture/20260921T164929Z/o4-fixed_000.cs8",
+          "sha256": "ce4b32210d86b14573710caab97947c05dffa7644a49887000c20cb45494e24c"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA",
+      "operator_notes": "drone antenna TOUCHING HackRF antenna, zero-distance test, goggles ON 5.8GHz",
+      "band": "5.8 GHz ISM",
+      "label": "dji_o4",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "lna_db": 8,
+        "vga_db": 8
+      }
     }
   ]
 }
