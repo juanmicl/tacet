@@ -97,17 +97,28 @@ captures — detector design must account for dwell time per window.**
 
 ### Detector-design implications
 
-1. **Dwell time matters**: 3 s can see near-zero duty (7.2%) or heavy
-   activity (31.6%) at the same frequency depending on when the FHSS
-   sequence passes through. A detector that integrates longer or watches
-   multiple windows simultaneously will be more robust.
-2. **Per-bin SNR is the right metric for FHSS**: the window-mean dilutes
+1. **One 20 MHz window is sufficient**: the FHSS visits all frequencies
+   uniformly. A 10-pass sweep across the full ISM band (2400-2480 MHz,
+   5 positions, ~50 s) showed every window active in every pass with
+   consistent duty (18-35% depending on band edge). No temporal
+   clustering, no frequency gaps. Detection range is a link-budget
+   question, not a coverage question.
+2. **Link budget calibrated**: at 5 cm the signal arrives at +17 dB
+   peak with lna 16/vga 16. At ~1 m it measured -18 dB (yesterday,
+   consistent with FSPL). At 100-500 m the expected signal level
+   (-60 to -74 dBm) leaves 15-30 dB of margin above the HackRF noise
+   floor, supporting the 0.3-2 km detection goal for the RF layer.
+3. **Per-bin SNR is the right metric for FHSS**: the window-mean dilutes
    the signal by averaging over empty hops. The occupied-bin fraction
    (82-94% when active) and the median per-bin ratio (+7 to +13 dB) are
    the honest detection margins.
-3. **No clipping at bench distance with 8/8 gains**: the signal chain
+4. **No clipping at bench distance with 8/8 gains**: the signal chain
    has headroom. At longer ranges, gains can go up before hitting rails
    (the saturated 32/32 capture shows 3.9% rails at ambient WiFi alone).
+5. **Signal level varies with exact antenna distance**: captures at
+   nominally the same bench distance showed ~9 dB variation, consistent
+   with 2-3x actual distance differences (6 dB per doubling). Calibrated
+   distance measurements (walk-tests) will resolve this.
 
 ## Honest-results note
 
