@@ -84,6 +84,9 @@ Notes:
   showed +21.0 dB window-mean SNR with 93.8% occupied bins, confirming
   the signal is ELRS, not noise.
 - TX power as configured on the Boxer: 100 mW (20 dBm).
+- Measurements taken with transmitter only (no receiver connected, no
+  telemetry). Duty cycle may shift slightly when the drone is linked
+  (telemetry slots and link adaptation change the packet pattern).
 - Session: 20260919T004638Z through 20260919T005913Z (5 signal + 5
   matched control recordings, ~10 min total bench time).
 
