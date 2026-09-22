@@ -189,5 +189,7 @@ If a change requires any of the right column, stop and flag it.
 - Ask before: adding dependencies, changing repo structure, touching
   anything outside the current phase's scope, and ALWAYS before any
   `git push` (pushes require the owner's explicit prior approval).
+- Prose hygiene: .md docs, notebook markdown cells, and docstrings go
+  through the humanizer skill pass before commit; no push without it.
 - Current phase is P0/P1 ONLY. Passive radar and acoustic are future
   phases — do not scaffold them yet beyond the folder placeholders.
