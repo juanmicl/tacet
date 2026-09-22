@@ -3,7 +3,8 @@
 Status: pipeline, CLI and self-tests in place (`uv run python -m tests`).
 **ELRS results measured** (2026-09-19 bench session, notebook
 `notebooks/01_bench_overview.ipynb` executed with outputs). DJI O4
-pending hardware session.
+**blocked by receiver sensitivity**: HackRF One noise figure at 5.8 GHz
+is too high; Pluto+ (AD9363) required (see Results section below).
 
 ## Goal
 
@@ -41,18 +42,50 @@ project are only as good as these measured references.
 
 ## Results — DJI O4 video link (5.1/5.8 GHz)
 
-| metric | value |
-| --- | --- |
-| occupied bandwidth (99%) | ___ MHz |
-| duty cycle (-35 dB rel.) | ___ |
-| spectral flatness | ___ |
-| mean burst duration | ___ s |
-| mean gap duration | ___ s |
-| rail fraction (whole capture) | ___ |
-| vs TX-OFF control (mean PSD ratio) | ___ dB |
+Status: **characterization blocked by receiver sensitivity**. The O4 air
+unit transmits (goggles receive video at all times), but the HackRF One
+cannot resolve the signal at 5.x GHz. Measured 2026-09-22.
 
-- Center frequency used: ___ MHz (from the `o4-scan` winner).
-- Session: ___ (id), date: ___.
+### What we tested
+
+| Test | Antenna | Gain | Result |
+| --- | --- | --- | --- |
+| Dual-band 2.4/5.8, 5.1 GHz, ~1 m | dual-band whip | 8/8, 16/16, 32/32 | no signal above noise |
+| Dual-band, 5.8 GHz, ~1 m | dual-band whip | 16/16 | no signal above noise |
+| Dual-band, 5.8 GHz, 0 cm (antennas touching) | dual-band whip | 8/8 | no signal above noise |
+| Patch 9.4 dBi LHCP, 5.8 GHz, ~1 m | Aihasd Triple Feed Patch | 16/16 | no signal above noise |
+| Patch 9.4 dBi LHCP, 5.8 GHz, ~30 cm | Aihasd Triple Feed Patch | 32/32 | marginal (~2 dB above matched control) |
+| WiFi 5 GHz (reference, routers) | Aihasd Triple Feed Patch | 32/32 | CLEAR: 5180 MHz +26.7 dB, multiple channels visible |
+
+The WiFi reference proves the antenna, coax, and HackRF work correctly at
+5.x GHz for sufficiently strong signals (WiFi routers emit 100+ mW). The
+O4 air unit (10-50 mW, unconfirmed) falls below the HackRF One's internal
+noise at 5.8 GHz.
+
+### Root cause: HackRF One noise figure at 5.8 GHz
+
+- HackRF dev mailing list describes the device as "extremely deaf" at
+  higher frequencies without an external LNA.
+- HackRF Pro (announced Dec 2025) improves the noise figure significantly
+  but still recommends an LNA for weak-signal reception.
+- Projects that successfully detect DJI signals at 5.8 GHz use more
+  sensitive SDRs: DroneSecurity uses a USRP B210 (~2,000 EUR); the ANTSDR
+  project uses dedicated hardware (~200 EUR). None report success with
+  the HackRF One.
+
+### Hardware decision
+
+The Pluto+ (AD9363, ~180 EUR) is the correct platform for O4
+characterization:
+- noise figure ~3-5 dB (vs HackRF's 8-15+ at 5.8 GHz)
+- 12-bit ADC (24 dB more dynamic range than HackRF's 8-bit)
+- already planned for P3 passive radar (dual coherent RX)
+- the coherence characterization experiment (notebook 02) is already
+  built and waiting for the hardware
+
+Until the Pluto+ arrives, O4 characterization remains blocked. The HackRF
+One is adequate for 2.4 GHz ELRS detection (demonstrated at +13 dB SNR
+at 1 m) and general wideband spectrum scanning.
 
 ## Results — ELRS control link (2.4 GHz ISM)
 
