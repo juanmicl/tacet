@@ -90,7 +90,8 @@ def test_dry_run_writes_nothing():
                 _repo_schema(), encoding="utf-8")
             before = sorted(str(p) for p in Path(tmp).rglob("*"))
             buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
+            with contextlib.redirect_stdout(buf), \
+                 contextlib.redirect_stderr(io.StringIO()):
                 rc = capture.main(["elrs-bench", "--dry-run",
                                    "--duration-s", "5",
                                    "--label", "elrs",
@@ -157,7 +158,9 @@ def _fake_repo_ctx(fail=False, size_bytes=None, interrupt=False):
 
 
 def test_capture_success_writes_manifest():
-    with _fake_repo_ctx(), contextlib.redirect_stdout(io.StringIO()):
+    with _fake_repo_ctx(), \
+         contextlib.redirect_stdout(io.StringIO()), \
+         contextlib.redirect_stderr(io.StringIO()):
         rc = capture.main(["elrs-bench", "--duration-s", "1",
                            "--power", "100", "--notes", "t",
                            "--label", "elrs", "--condition", "bench",
@@ -173,7 +176,9 @@ def test_capture_success_writes_manifest():
 
 
 def test_capture_failure_cleans_up_and_writes_nothing():
-    with _fake_repo_ctx(fail=True):
+    with _fake_repo_ctx(fail=True), \
+         contextlib.redirect_stdout(io.StringIO()), \
+         contextlib.redirect_stderr(io.StringIO()):
         rc = capture.main(["elrs-bench", "--duration-s", "1",
                            "--label", "elrs", "--condition", "bench"])
         assert rc != 0

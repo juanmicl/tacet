@@ -325,11 +325,13 @@ def test_validate_check_files():
             errs = manifest_cli.validate_manifest(
                 doc, check_files=True, repo_root=Path(tmp))
             assert any("sha256 mismatch" in e for e in errs)
-            # data/ absent: file checks skipped gracefully
+            # data/ absent: file checks skipped gracefully (note goes to
+            # stderr — captured, the suite output stays pristine)
             import shutil
             shutil.rmtree(Path(tmp) / "data")
-            assert manifest_cli.validate_manifest(
-                doc, check_files=True, repo_root=Path(tmp)) == []
+            with contextlib.redirect_stderr(io.StringIO()):
+                assert manifest_cli.validate_manifest(
+                    doc, check_files=True, repo_root=Path(tmp)) == []
         finally:
             os.chdir(old_cwd)
 
@@ -344,7 +346,8 @@ def test_manifest_cli_main():
                 GOLDEN_READ_SCHEMA(), encoding="utf-8")
             (Path(tmp) / "manifest.json").write_text(
                 GOLDEN.read_text(encoding="utf-8"), encoding="utf-8")
-            assert manifest_cli.main(["validate"]) == 0
+            with contextlib.redirect_stdout(io.StringIO()):
+                assert manifest_cli.main(["validate"]) == 0
             bad = json.loads(GOLDEN.read_text(encoding="utf-8"))
             bad["recordings"][1]["id"] = bad["recordings"][0]["id"]
             (Path(tmp) / "manifest.json").write_text(
@@ -356,7 +359,9 @@ def test_manifest_cli_main():
             # --check-files with no data/ directory: graceful pass
             (Path(tmp) / "manifest.json").write_text(
                 GOLDEN.read_text(encoding="utf-8"), encoding="utf-8")
-            assert manifest_cli.main(["validate", "--check-files"]) == 0
+            with contextlib.redirect_stdout(io.StringIO()), \
+                 contextlib.redirect_stderr(io.StringIO()):
+                assert manifest_cli.main(["validate", "--check-files"]) == 0
         finally:
             os.chdir(old_cwd)
 
