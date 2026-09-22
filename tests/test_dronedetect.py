@@ -116,6 +116,32 @@ def test_list_files_missing_root_returns_empty():
         assert dd.list_dronedetect_files(str(Path(td) / "nope")) == []
 
 
+def test_expected_interference_accepts_matching():
+    from tacet.loaders import dronedetect as dd
+
+    with tempfile.TemporaryDirectory() as td:
+        _make_tree(td)
+        files = dd.list_dronedetect_files(td, expected_interference="clean")
+    assert len(files) == 4, f"got {len(files)}"
+    assert all(f["interference"] == "clean" for f in files)
+
+
+def test_expected_interference_rejects_mismatch():
+    from tacet.loaders import dronedetect as dd
+
+    with tempfile.TemporaryDirectory() as td:
+        _make_tree(td)
+        (Path(td) / "MIN_ON" / "MIN_0100_00.dat").write_bytes(b"")
+        try:
+            dd.list_dronedetect_files(td, expected_interference="clean")
+        except ValueError as exc:
+            assert "MIN_0100_00.dat" in str(exc), f"file not named: {exc}"
+            assert "bluetooth" in str(exc), f"actual not named: {exc}"
+            assert "'clean'" in str(exc), f"expected not named: {exc}"
+            return
+    raise AssertionError("expected ValueError on interference mismatch")
+
+
 def _desc(drone, mode, num):
     return {
         "path": f"data/x/{drone}_{mode}/{drone}_0000_{num:02d}.dat",

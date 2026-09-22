@@ -79,13 +79,15 @@ def parse_dronedetect_filename(name):
     }
 
 
-def list_dronedetect_files(root=DEFAULT_ROOT):
+def list_dronedetect_files(root=DEFAULT_ROOT, expected_interference=None):
     """Index one subset directory tree; one descriptor per .dat file.
 
     Descriptors carry per-file provenance (source, doi, license) plus the
     physical parameters. Directory names must be <CODE>_<MODE> and must
     agree with the contained filenames (via aliases). A missing root
-    returns an empty list.
+    returns an empty list. When expected_interference is given, any file
+    parsed with a different interference condition raises ValueError naming
+    the offending file and both values (None disables the check).
     """
     root_path = Path(root)
     if not root_path.is_dir():
@@ -103,6 +105,13 @@ def list_dronedetect_files(root=DEFAULT_ROOT):
                 raise ValueError(
                     f"directory/file mismatch: {directory.name!r} "
                     f"vs {entry.name!r}"
+                )
+            if (expected_interference is not None
+                    and meta["interference"] != expected_interference):
+                raise ValueError(
+                    f"{entry.name} has interference "
+                    f"{meta['interference']!r}, expected "
+                    f"{expected_interference!r}"
                 )
             files.append(
                 {
