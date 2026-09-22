@@ -23,11 +23,19 @@ import sys
 import traceback
 from pathlib import Path
 
+import warnings
+
 import matplotlib
 
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402  (backend must be set first)
+
+# Under Agg, every plt.show() emits this UserWarning; the executor captures
+# stderr into committed notebook outputs, so silence exactly this message.
+warnings.filterwarnings(
+    "ignore", message="FigureCanvasAgg is non-interactive.*"
+)
 
 
 def _figure_outputs() -> list:
