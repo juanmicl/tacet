@@ -64,7 +64,8 @@ PHA         NaN  0.797206  0.971176
 Confusion summary: MIN (DJI Mavic Mini) is nearly perfectly separable at
 57/60 windows and AUC 0.978, strong across all modes (0.968-0.985), with a
 distinct burst-timing signature (shortest mean bursts and gaps, narrowest
-occupied bandwidth). MP2 (DJI Mavic 2 Pro) is the weakest class: 10/60
+occupied bandwidth; see the feature-means table below). MP2 (DJI Mavic 2
+Pro) is the weakest class: 10/60
 correct, AUC 0.602, confused mainly with AIR (21 windows) and MP1 (17
 windows), the same DJI family and link technology. DIS (Parrot Disco)
 and INS (DJI Inspire 2) confuse mutually (DIS→INS 12, INS→DIS 4). AIR
@@ -72,6 +73,21 @@ absorbs many false positives (largest off-diagonal column: MP2 21, MP1 17,
 PHA 14, INS 13) while its own true row leaks most to DIS (23). PHA is
 strong in ON mode (0.971) but dragged down by HO (0.797) and cross-family
 leaks to AIR (14) and INS (9).
+
+Per-drone feature means over all 950 windows (the full-run basis for the
+separability reading above):
+
+```
+             obw_hz  spectral_flatness  duty_cycle  mean_burst_s  mean_gap_s
+drone
+AIR    2.893301e+07           0.040190    0.117967      0.000231    0.002698
+DIS    2.995518e+07           0.097683    0.127467      0.001340    0.002470
+INS    3.170293e+07           0.086070    0.373125      0.001812    0.003044
+MIN    1.553555e+07           0.022282    0.248099      0.000141    0.000559
+MP1    3.262598e+07           0.081906    0.395167      0.002540    0.001005
+MP2    3.514043e+07           0.098575    0.418621      0.003291    0.001391
+PHA    2.898750e+07           0.037016    0.445526      0.001586    0.002377
+```
 
 ## Honest-results note
 
