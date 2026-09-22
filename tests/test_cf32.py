@@ -101,6 +101,23 @@ def test_iter_cf32_blocks_rejects_nonpositive():
     raise AssertionError("expected ValueError for block_samples=0")
 
 
+def test_load_cf32_rejects_negative_n_samples():
+    from tacet.loaders import cf32
+
+    rng = np.random.default_rng(5)
+    z = (rng.standard_normal(8) + 1j * rng.standard_normal(8)).astype(
+        np.complex64
+    )
+    with tempfile.TemporaryDirectory() as td:
+        path = _write_cf32(td, "x.cf32", z)
+        try:
+            cf32.load_cf32(path, n_samples=-1)
+        except ValueError as exc:
+            assert "n_samples" in str(exc), f"wrong error: {exc}"
+            return
+    raise AssertionError("expected ValueError for negative n_samples")
+
+
 if __name__ == "__main__":
     import sys
 

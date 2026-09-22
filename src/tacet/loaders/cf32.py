@@ -18,10 +18,13 @@ def load_cf32(
     n_samples limits the complex samples read from `start`; if fewer are
     available, fewer are returned. start is a complex-sample offset so large
     files (DroneDetect .dat are ~960 MB) can be read in windows without
-    loading them whole.
+    loading them whole. A trailing half-sample on an odd float count is
+    ignored, and an empty file surfaces numpy's own memmap error.
     """
     if start < 0:
         raise ValueError("start must be non-negative")
+    if n_samples is not None and n_samples < 0:
+        raise ValueError("n_samples must be non-negative")
     raw = np.memmap(path, dtype=np.float32, mode="r")
     n_avail = max(raw.size // 2 - start, 0)
     n = n_avail if n_samples is None else min(n_samples, n_avail)
@@ -33,7 +36,7 @@ def load_cf32(
 
 
 def iter_cf32_blocks(path: str, block_samples: int) -> Iterator[np.ndarray]:
-    """Yield successive complex64 blocks; last block may be shorter."""
+    """Return an iterator yielding successive complex64 blocks; last block may be shorter."""
     if block_samples <= 0:
         raise ValueError("block_samples must be positive")
     return _iter_cf32_blocks(path, block_samples)

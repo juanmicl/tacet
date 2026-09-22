@@ -13,9 +13,12 @@ import numpy as np
 def load_cs8(path: str, n_samples: Optional[int] = None) -> np.ndarray:
     """Load a headerless cs8 file as complex64 (memmap-based).
 
-    n_samples limits the complex samples read; a trailing half-sample on an
-    odd byte count is ignored.
+    n_samples limits the complex samples read. A trailing half-sample on an
+    odd byte count is ignored, and an empty file surfaces numpy's own memmap
+    error.
     """
+    if n_samples is not None and n_samples < 0:
+        raise ValueError("n_samples must be non-negative")
     raw = np.memmap(path, dtype=np.int8, mode="r")
     n_avail = raw.size // 2
     n = n_avail if n_samples is None else min(n_samples, n_avail)
@@ -27,9 +30,13 @@ def load_cs8(path: str, n_samples: Optional[int] = None) -> np.ndarray:
 
 
 def iter_cs8_blocks(path: str, block_samples: int) -> Iterator[np.ndarray]:
-    """Yield successive complex64 blocks; last block may be shorter."""
+    """Return an iterator over successive complex64 blocks; last may be shorter."""
     if block_samples <= 0:
         raise ValueError("block_samples must be positive")
+    return _iter_cs8_blocks(path, block_samples)
+
+
+def _iter_cs8_blocks(path: str, block_samples: int) -> Iterator[np.ndarray]:
     raw = np.memmap(path, dtype=np.int8, mode="r")
     n_avail = raw.size // 2
     for start in range(0, n_avail, block_samples):
