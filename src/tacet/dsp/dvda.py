@@ -114,7 +114,8 @@ def detect_block(z, fs, pfa=1e-3, pair_ms=(0.7, 1.4), channel_hz=1e6,
     """Run the full chain over one analysis block (design point 100 ms).
 
     Returns n_pairs, max_pair_peak (the block detection statistic),
-    best_pair_gap_ms, best_channel, n_segments, n_channels.
+    best_pair_gap_ms, best_channel, n_segments (kept segments after
+    adjacent-channel ghost suppression), n_channels.
     """
     channels, fs_ch = channelize(z, fs, channel_hz)
     bin_n = max(1, int(round(bin_us * fs_ch / 1e6)))
@@ -145,6 +146,7 @@ def detect_block(z, fs, pfa=1e-3, pair_ms=(0.7, 1.4), channel_hz=1e6,
             for nk in (k - 1, k + 1):
                 if not 0 <= nk < channels.shape[0]:
                     continue
+                # raw neighbor segments (not kept): a suppressor only needs to be stronger
                 for nseg in segs_by_ch[nk]:
                     if nseg[0] <= seg[1] and seg[0] <= nseg[1]:
                         n_peak = float(
