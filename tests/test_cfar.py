@@ -95,12 +95,11 @@ def test_median_floor_robust_to_contamination():
     contaminated = cfar.noise_floor(S)
     # With 20% contamination the combined median sits at the 62.5th
     # percentile of the noise values (~1.4x the clean median for an
-    # exponential distribution); 1.5x tolerance holds with margin.
-    # The ~1.4x figure is the EXPECTED ratio; per-slice order-statistic
-    # noise (ratio std ~6%) puts individual time slices above 1.5, so
-    # the check is on the slice-aggregate ratio, matching the derivation.
-    ratio = float(np.median(contaminated / clean))
-    assert ratio < 1.5, f"median floor broke: ratio {ratio:.3f}"
+    # exponential distribution). Per-slice ratios carry order-statistic
+    # noise (~6%), so assert on the aggregate, not every slice.
+    assert np.median(contaminated) < 1.5 * np.median(clean), (
+        "median floor broke"
+    )
 
 
 def test_input_validation():
