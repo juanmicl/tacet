@@ -31,7 +31,8 @@ def analyze_block(z, fs, pfa=0.01, nfft=1024, pfa_attr=1e-4):
     occupied_fraction = D.sum(axis=0) / n_elig
     ratio = S / floor[np.newaxis, :]
     center = S.shape[0] // 2
-    ratio[center - 4 : center + 5, :] = 0.0  # DC rows excluded from excess
+    dc = features.DC_EXCLUDE_BINS
+    ratio[center - dc : center + dc + 1, :] = 0.0  # DC rows out of excess
 
     D_attr = cfar.detect_bins(S, pfa_attr)
     prev, nxt = D_attr[:, :-1], D_attr[:, 1:]
