@@ -128,8 +128,9 @@ occupancy-dominated null) the detector is not usable as a standalone
 block detector: it does not reach Pd 0.9 at any measured rung, Pd stays
 at 0.00 to 0.01 from -15 to -3 dB SNR_eff, and even bench-level blocks
 reach only Pd 0.0636 at the 1% block threshold. One
-confound bounds what the ladder can show: the mixed positives contain
-the null's ambient WiFi at full strength, so the flat Pd is partly a
+confound bounds what the ladder can show: the mixed positives carry
+their pair controls' ambient WiFi at full strength against a null
+dominated by one occupancy-heavy capture, so the flat Pd is partly a
 floor effect of an occupancy statistic evaluated against an
 occupancy-dominated null. The measured lesson is that this statistic
 cannot separate ELRS from heavy ambient WiFi at these SNRs, not that
@@ -144,6 +145,9 @@ Receive-only analysis of own bench captures. No transmission,
 interception of content, or neutralization capability.
 
 ## Reproducing
+
+Requires the P0 bench captures listed in manifest.json (own recordings
+under data/signature_capture/, not distributed with the repo).
 
 ```bash
 uv run python -m tests
