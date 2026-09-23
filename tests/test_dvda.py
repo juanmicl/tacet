@@ -150,6 +150,19 @@ def test_energy_mask_pfa():
     assert abs(emp - pfa) < band, f"empirical {emp:.5f} vs nominal {pfa}"
 
 
+def test_adjacent_ghost_suppressed():
+    """Strong twin pair must not double-pair via adjacent-channel
+    leakage ghosts: the ghost segments are weaker than their source."""
+    from tacet.dsp import dvda
+
+    rng = np.random.default_rng(23)
+    pkt = _flrc_packet(rng)
+    z = _block_with_packets(rng, [(pkt, 10.0), (pkt, 11.0)])
+    r = dvda.detect_block(z, FS_T)
+    assert r["n_pairs"] == 1, r
+    assert r["best_channel"] == 13, r
+
+
 if __name__ == "__main__":
     import sys
 

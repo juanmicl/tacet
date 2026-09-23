@@ -8,7 +8,10 @@ energy mask, pair same-channel segments in the 0.7-1.4 ms window, and
 correlate each pair coherently. The block statistic is the best pair
 peak; two nearly identical complex envelopes 1 ms apart are the DVDA
 fingerprint (WiFi re-scrambles retransmitted PDUs, so envelopes do not
-repeat). Pure functions; thresholds derive from Pfa only.
+repeat). Pure functions; thresholds derive from Pfa only. Segments whose
+energy is dominated by a time-overlapping stronger neighbor in the
+adjacent channel are spectral-leakage ghosts and are dropped before
+pairing.
 """
 
 import numpy as np
@@ -124,10 +127,40 @@ def detect_block(z, fs, pfa=1e-3, pair_ms=(0.7, 1.4), channel_hz=1e6,
         "n_segments": 0,
         "n_channels": int(channels.shape[0]),
     }
+    segs_by_ch = []
+    power_by_ch = []
     for k in range(channels.shape[0]):
-        mask, _ = energy_mask(channels[k], fs_ch, pfa=pfa, bin_us=bin_us)
-        segs = segments(mask)
-        out["n_segments"] += len(segs)
+        mask, power = energy_mask(channels[k], fs_ch, pfa=pfa, bin_us=bin_us)
+        segs_by_ch.append(segments(mask))
+        power_by_ch.append(power)
+    # Ghost suppression: a segment in channel k that time-overlaps a
+    # segment in channel k+-1 with HIGHER peak power is adjacent-channel
+    # leakage of that stronger neighbor; drop it before pairing.
+    kept_by_ch = []
+    for k in range(channels.shape[0]):
+        kept = []
+        for seg in segs_by_ch[k]:
+            peak_k = float(power_by_ch[k][seg[0] : seg[1] + 1].max())
+            ghost = False
+            for nk in (k - 1, k + 1):
+                if not 0 <= nk < channels.shape[0]:
+                    continue
+                for nseg in segs_by_ch[nk]:
+                    if nseg[0] <= seg[1] and seg[0] <= nseg[1]:
+                        n_peak = float(
+                            power_by_ch[nk][nseg[0] : nseg[1] + 1].max()
+                        )
+                        if n_peak > peak_k:
+                            ghost = True
+                            break
+                if ghost:
+                    break
+            if not ghost:
+                kept.append(seg)
+        kept_by_ch.append(kept)
+    out["n_segments"] = sum(len(k_) for k_ in kept_by_ch)
+    for k in range(channels.shape[0]):
+        segs = kept_by_ch[k]
         for i in range(len(segs)):
             for j in range(i + 1, len(segs)):
                 gap_ms = (segs[j][0] - segs[i][0]) * bin_ms
