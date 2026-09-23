@@ -21,8 +21,9 @@ bench captures.
   hopping structure is only readable at the stricter operating point.
 - Block statistics, one dict per 100 ms block:
   max_occupied_fraction (largest per-slice fraction of eligible bins
-  above threshold; on pure noise each slice flags about 1% of bins, so
-  the block max sits slightly above 0.01), excess_db (largest
+  above threshold; on pure noise each slice flags about 1% of bins, and
+  the block max over roughly 2000 slices lands around 0.02 to 0.04,
+  measured 0.028 to 0.037 in the unit tests), excess_db (largest
   bin-power-to-floor ratio in dB, DC rows excluded; on noise it is the
   extreme of exponential draws against the median floor and is positive
   by definition), bin_diversity_attr (fraction of frequency bins flagged
@@ -62,9 +63,11 @@ bench captures.
   (excess_db); block threshold max_occupied_fraction > 0.2542 at
   block-Pfa 1%; Pd at that threshold 0.0636. The excess_db AUC sits
   below chance (0.4557), consistent with the ambient-WiFi-dominated
-  null producing strong per-bin excursions; only the control-side
-  medians were tabulated, so no directional ordering between the two
-  sides is claimed.
+  null producing strong per-bin excursions (a point estimate; the
+  capture-level clustering noted with the attribution results puts
+  sub-0.5 values like this within noise of chance); only the
+  control-side medians were tabulated, so no directional ordering
+  between the two sides is claimed.
 - Mixing ladder (500 mixed blocks, 100 per rung, alpha solved per pair;
   per-pair bench per-bin SNR +21.0, +11.3, +10.1 and +14.8 dB, clip
   floored at zero so these are upward-biased estimates, not calibrated
@@ -94,8 +97,8 @@ bench captures.
   mid-to-high bin_diversity band (about 0.4 to 0.95) while controls
   cluster at low diversity or at mid diversity with near-maximal
   turnover, skewing toward higher turnover than ELRS, which is why
-  turnover_attr lands below chance (mildly anti-selective on this
-  data).
+  turnover_attr lands below chance, at 0.4376, a mildly anti-selective
+  point estimate on this data (capture-level clustering, see below).
 
 ## Honest-results note
 
