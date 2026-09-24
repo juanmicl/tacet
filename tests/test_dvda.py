@@ -163,6 +163,36 @@ def test_adjacent_ghost_suppressed():
     assert r["best_channel"] == 13, r
 
 
+def test_center_channel_excluded():
+    """Bursty center-channel LO leakage must not produce pairs: the
+    center channel is excluded from the chain (regression for the
+    notebook-07 failure where envelope-varying LO gating dominated
+    every block at peak ~0.99). A real twin pair elsewhere is still
+    detected."""
+    from tacet.dsp import dvda
+
+    rng = np.random.default_rng(29)
+    n = int(BLOCK_S * FS_T)
+    t = np.arange(n) / FS_T
+    z = (
+        rng.standard_normal(n) + 1j * rng.standard_normal(n)
+    ).astype(np.complex64) * 0.5
+    # bursty LO-like envelope at the capture center: gated strong tone
+    gate = ((t * 1000) % 2.0) < 0.4  # ~400 us bursts every 2 ms
+    z += (gate * 25.0 * np.exp(2j * np.pi * 0.0 * t)).astype(np.complex64)
+    r_leak = dvda.detect_block(z, FS_T)
+    assert r_leak["max_pair_peak"] < 0.3 or r_leak["best_channel"] not in (
+        9, 10, 11
+    ), r_leak
+    # and a real twin pair at +3.5 MHz is still detected
+    pkt = _flrc_packet(rng)
+    z2 = _block_with_packets(rng, [(pkt, 10.0), (pkt, 11.0)])
+    z2 = z2 + (gate * 25.0).astype(np.complex64)  # same leakage on top
+    r_real = dvda.detect_block(z2, FS_T)
+    assert r_real["max_pair_peak"] > 0.3, r_real
+    assert r_real["best_channel"] == 13, r_real
+
+
 if __name__ == "__main__":
     import sys
 

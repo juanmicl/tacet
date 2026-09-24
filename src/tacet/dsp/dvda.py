@@ -11,7 +11,10 @@ fingerprint (WiFi re-scrambles retransmitted PDUs, so envelopes do not
 repeat). Pure functions; thresholds derive from Pfa only. Segments whose
 energy is dominated by a time-overlapping stronger neighbor in the
 adjacent channel are spectral-leakage ghosts and are dropped before
-pairing.
+pairing. The center channel is excluded from the whole chain: it carries
+the receiver's LO leakage, whose bursty envelope produces quasi-identical
+segment pairs that dominate every block, and excluding it costs ~2 of the
+~20 in-window FHSS slots while the max statistic stays insensitive.
 """
 
 import numpy as np
@@ -128,9 +131,18 @@ def detect_block(z, fs, pfa=1e-3, pair_ms=(0.7, 1.4), channel_hz=1e6,
         "n_segments": 0,
         "n_channels": int(channels.shape[0]),
     }
+    # the center channel carries the receiver's LO leakage; its bursty
+    # envelope produces quasi-identical segment pairs that dominate every
+    # block, and excluding it costs ~2 of the ~20 in-window FHSS slots
+    # (max statistic insensitive).
+    excluded = channels.shape[0] // 2
     segs_by_ch = []
     power_by_ch = []
     for k in range(channels.shape[0]):
+        if k == excluded:
+            segs_by_ch.append([])
+            power_by_ch.append(np.empty(0))  # never indexed: no segments
+            continue
         mask, power = energy_mask(channels[k], fs_ch, pfa=pfa, bin_us=bin_us)
         segs_by_ch.append(segments(mask))
         power_by_ch.append(power)
