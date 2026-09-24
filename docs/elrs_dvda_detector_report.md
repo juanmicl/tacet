@@ -33,7 +33,7 @@ mixing ladder over measured SNR_eff from -15 to -3 dB.
 - Gamma-quantile mask: per channel, power is integrated into 50 us bins
   (50 samples per bin); a bin sums 50 iid exponential powers, so the
   threshold is the exact gamma quantile scaled by the block mean,
-  T = gamma.ppf(1 - pfa, a=50) * mean/50 = 1.588 x mean at pfa 1e-3.
+  T = gamma.ppf(1 - pfa, a=50) * mean/50 = 1.495 x mean at pfa 1e-3.
   The mask is scale-invariant: it tracks each channel's mean, so a
   constant interferer raises threshold and power together and never
   crosses (measured below). Segments are contiguous runs of bins above
@@ -48,9 +48,10 @@ mixing ladder over measured SNR_eff from -15 to -3 dB.
   exclusion, channels 9, 10 and 11 (the receiver's LO leakage spans
   roughly +/-1.5 MHz on this hardware) run the full mask and segment
   chain but their kept segments skip pairing, and they stay in the
-  reference lists that ghost suppression reads; the cost is 4 of the
-  ~20 in-window FHSS slots and the max statistic is insensitive to
-  them.
+  reference lists that ghost suppression reads; the excluded band fully
+  covers 3 of the ~20 in-window FHSS raster slots (offsets -0.6, +0.4
+  and +1.4 MHz) and can ghost-suppress a fourth (-1.6 MHz) when an LO
+  burst overlaps it, so the max statistic is insensitive to the cost.
 - LBT drop-not-defer semantics: ELRS LBT drops (not defers) a
   busy-channel send, and both DVDA sends pass LBT independently, so
   pair survival is (1 - p_busy)^2; consequences in the honest-results
@@ -92,9 +93,9 @@ The tested invariant is the relative separation, 5.9x here.
   center channel 10, with the adjacent channel 9 next (DC sits on the
   9/10 boundary, so LO leakage spills into both). The constant-DC
   hypothesis was falsified by measurement: the scale-invariant mask
-  makes constant DC inert (channel 10 with a constant DC spike of
-  amplitude 60: bin CV 5.2e-4, max/mean 1.0020 against a threshold
-  ratio of 1.588, zero segments; slow 5 percent AM at 2 Hz, max/mean
+   makes constant DC inert (channel 10 with a constant DC spike of
+   amplitude 60: bin CV 5.2e-4, max/mean 1.0020 against a threshold
+   ratio of 1.495, zero segments; slow 5 percent AM at 2 Hz, max/mean
   1.0215, still zero segments and pairs). What actually pairs is bursty
   envelope variation in the LO band: a phasor gated at 0.1-0.8 ms
   reproduces the failure signature (peak 0.993 through channel 10), and

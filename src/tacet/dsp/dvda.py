@@ -14,10 +14,12 @@ adjacent channel are spectral-leakage ghosts and are dropped before
 pairing. The center band of three channels is excluded from pairing:
 the receiver's LO leakage spans roughly +/-1.5 MHz on this hardware, and
 its bursty envelope produces quasi-identical segment pairs that dominate
-every block — but those channels still run the mask/segment chain so
-their segments serve as ghost-suppression reference for their outer
-neighbors; the cost is 4 of the ~20 in-window FHSS slots and the max
-statistic stays insensitive to them.
+every block. Those channels still run the mask/segment chain so their
+segments serve as ghost-suppression reference for their outer neighbors.
+The excluded band fully covers 3 of the ~20 in-window FHSS raster slots
+(offsets -0.6, +0.4 and +1.4 MHz) and can ghost-suppress a fourth
+(-1.6 MHz) when an LO burst overlaps it; the max statistic is
+insensitive to the cost.
 """
 
 import numpy as np
@@ -189,9 +191,9 @@ def detect_block(z, fs, pfa=1e-3, pair_ms=(0.7, 1.4), channel_hz=1e6,
             # from pairing: their bursty envelopes produce quasi-
             # identical segment pairs that dominate every block. These
             # channels still run the full chain above as ghost-
-            # suppression reference for their outer neighbors; excluding
-            # them costs 4 of the ~20 in-window FHSS slots (max
-            # statistic insensitive).
+            # suppression reference for their outer neighbors; the band
+            # fully covers 3 of the ~20 in-window FHSS raster slots and
+            # can ghost-suppress a fourth (max statistic insensitive).
             continue
         segs = kept_by_ch[k]
         for i in range(len(segs)):
