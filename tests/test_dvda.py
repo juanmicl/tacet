@@ -178,7 +178,7 @@ def test_center_channel_excluded():
         rng.standard_normal(n) + 1j * rng.standard_normal(n)
     ).astype(np.complex64) * 0.5
     # bursty LO-like envelope at the capture center: gated strong tone
-    gate = ((t * 1000) % 2.0) < 0.4  # ~400 us bursts every 2 ms
+    gate = ((t * 1000) % 1.0) < 0.4  # ~400 us bursts every 1 ms
     z += (gate * 25.0 * np.exp(2j * np.pi * 0.0 * t)).astype(np.complex64)
     r_leak = dvda.detect_block(z, FS_T)
     assert r_leak["max_pair_peak"] < 0.3 or r_leak["best_channel"] not in (

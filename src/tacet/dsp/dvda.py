@@ -11,10 +11,12 @@ fingerprint (WiFi re-scrambles retransmitted PDUs, so envelopes do not
 repeat). Pure functions; thresholds derive from Pfa only. Segments whose
 energy is dominated by a time-overlapping stronger neighbor in the
 adjacent channel are spectral-leakage ghosts and are dropped before
-pairing. The center channel is excluded from the whole chain: it carries
-the receiver's LO leakage, whose bursty envelope produces quasi-identical
-segment pairs that dominate every block, and excluding it costs ~2 of the
-~20 in-window FHSS slots while the max statistic stays insensitive.
+pairing. The center channel is excluded from pairing — it carries the
+receiver's LO leakage, whose bursty envelope produces quasi-identical
+segment pairs that dominate every block — but it still runs the mask/
+segment chain so its segments serve as ghost-suppression reference for
+its neighbors; the cost is ~2 of the ~20 in-window FHSS slots and the
+max statistic stays insensitive to it.
 """
 
 import numpy as np
@@ -117,8 +119,9 @@ def detect_block(z, fs, pfa=1e-3, pair_ms=(0.7, 1.4), channel_hz=1e6,
     """Run the full chain over one analysis block (design point 100 ms).
 
     Returns n_pairs, max_pair_peak (the block detection statistic),
-    best_pair_gap_ms, best_channel, n_segments (kept segments after
-    adjacent-channel ghost suppression), n_channels.
+    best_pair_gap_ms, best_channel, n_segments (kept segments that enter
+    pairing, after adjacent-channel ghost suppression and with the center
+    channel excluded), n_channels.
     """
     channels, fs_ch = channelize(z, fs, channel_hz)
     bin_n = max(1, int(round(bin_us * fs_ch / 1e6)))
@@ -131,18 +134,10 @@ def detect_block(z, fs, pfa=1e-3, pair_ms=(0.7, 1.4), channel_hz=1e6,
         "n_segments": 0,
         "n_channels": int(channels.shape[0]),
     }
-    # the center channel carries the receiver's LO leakage; its bursty
-    # envelope produces quasi-identical segment pairs that dominate every
-    # block, and excluding it costs ~2 of the ~20 in-window FHSS slots
-    # (max statistic insensitive).
     excluded = channels.shape[0] // 2
     segs_by_ch = []
     power_by_ch = []
     for k in range(channels.shape[0]):
-        if k == excluded:
-            segs_by_ch.append([])
-            power_by_ch.append(np.empty(0))  # never indexed: no segments
-            continue
         mask, power = energy_mask(channels[k], fs_ch, pfa=pfa, bin_us=bin_us)
         segs_by_ch.append(segments(mask))
         power_by_ch.append(power)
@@ -172,8 +167,21 @@ def detect_block(z, fs, pfa=1e-3, pair_ms=(0.7, 1.4), channel_hz=1e6,
             if not ghost:
                 kept.append(seg)
         kept_by_ch.append(kept)
-    out["n_segments"] = sum(len(k_) for k_ in kept_by_ch)
+    # n_segments counts kept segments that can enter pairing; the center
+    # channel is excluded from pairing (see below) so its kept segments
+    # are not counted.
+    out["n_segments"] = sum(
+        len(kept) for k, kept in enumerate(kept_by_ch) if k != excluded
+    )
     for k in range(channels.shape[0]):
+        if k == excluded:
+            # the center channel carries the receiver's LO leakage; its
+            # bursty envelope produces quasi-identical segment pairs that
+            # dominate every block. It runs the full chain above only as
+            # ghost-suppression reference for its neighbors; its own kept
+            # segments never pair, costing ~2 of the ~20 in-window FHSS
+            # slots (max statistic insensitive).
+            continue
         segs = kept_by_ch[k]
         for i in range(len(segs)):
             for j in range(i + 1, len(segs)):
