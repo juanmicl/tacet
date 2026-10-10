@@ -53,7 +53,6 @@ from tacet.loaders import manifest as manifest_mod
 from tacet.loaders.migration import band_for_freq_hz
 
 BYTES_PER_SAMPLE = 4          # cs16: 2 bytes I + 2 bytes Q per sample
-BYTES_PER_SECOND = 4 * 20_000_000   # worst case: mono 20 Msps (disk check)
 
 RATE_GUARD_MIN_RATIO = 0.90   # below 90% of the requested rate -> guard
 MIN_RATE_WINDOWS = 3          # rate estimated over >= 3 timed windows
@@ -80,24 +79,28 @@ SCENARIOS = {
 
 # Scenario-defined configuration: sample rate, RX channel count, protocol,
 # purpose, duration envelope, and the rf_chain note that goes into
-# operator_notes. o4-capture is capped at 60 s: it accumulates in RAM at
-# 20 Msps mono (complex64 = 8 B/sample -> ~9.6 GB at 60 s); the 660 s
-# envelope is for the 2.56 Msps coherence/control scenarios.
+# operator_notes. Duration caps are RAM-bound, not disk-bound: pyadi rx()
+# delivers complex128 (16 B/sample) and capture_once accumulates ALL
+# buffers before one concatenate (~2x peak), so dual 2.56 Msps costs
+# ~40 MB of RAM per recorded second and 20 Msps mono ~320 MB/s. The
+# planned follow-up that removes these caps is per-buffer int16
+# conversion with incremental channel-file writes inside the rx loop
+# (keeping the full-file-set zero-orphan semantics).
 SCENARIO_CONFIG = {
     "coherence-cal": {
         "rate": 2_560_000, "dual": True, "protocol": "fm_carrier",
         "purpose": "coherence_cal", "rf_chain": "rx1+rx2 coherent dual",
-        "max_duration_s": 660.0,
+        "max_duration_s": 120.0,
     },
     "o4-capture": {
         "rate": 20_000_000, "dual": False, "protocol": "dji_o4",
         "purpose": "signature_capture", "rf_chain": "rx1",
-        "max_duration_s": 60.0,
+        "max_duration_s": 15.0,
     },
     "control": {
         "rate": 2_560_000, "dual": False, "protocol": "noise",
         "purpose": "signature_capture", "rf_chain": "rx1",
-        "max_duration_s": 660.0,
+        "max_duration_s": 120.0,
     },
 }
 
@@ -128,14 +131,26 @@ def _make_device(uri: str):
     return adi.ad9361(uri=uri)
 
 
+def bytes_per_second(scenario: str) -> int:
+    """On-disk byte rate for the front-end's disk-headroom estimate.
+
+    cs16 at the scenario's sample rate, one file per RX channel (dual
+    coherence: ~20.5 MB/s; mono 20 Msps: ~80 MB/s) — matches what the
+    capture actually writes, not the worst case across scenarios.
+    """
+    cfg = SCENARIO_CONFIG[scenario]
+    return BYTES_PER_SAMPLE * cfg["rate"] * (2 if cfg["dual"] else 1)
+
+
 def validate(args) -> None:
     """Validate parsed CLI args against the Pluto+ envelopes.
 
     Envelope: 70-6000 MHz, gain 0-74.5 dB (continuous, no step sizes),
-    duration 1 s up to the scenario's cap (60 s for the in-RAM 20 Msps
-    mono o4-capture, 660 s for the 2.56 Msps scenarios). Raises
-    ValueError with a user-facing message; the front-end turns it into
-    exit code 2 before anything is touched.
+    duration 1 s up to the scenario's RAM-bound cap (15 s for the
+    20 Msps mono o4-capture, 120 s for the 2.56 Msps scenarios; see
+    SCENARIO_CONFIG for the arithmetic). Raises ValueError with a
+    user-facing message; the front-end turns it into exit code 2
+    before anything is touched.
     """
     if getattr(args, "scan_fm", False) and args.freq_mhz is not None:
         raise ValueError(
@@ -389,24 +404,35 @@ def capture_once(ns, session_dir: Path, index: int) -> dict | None:
         print(f"pluto: channel write failed: {exc}", file=sys.stderr)
         return None
 
-    expected = BYTES_PER_SAMPLE * target * len(paths)
-    actual = sum(p.stat().st_size for p in paths)
-    if actual != expected:
-        mismatch = (f" [byte-count warning: expected {expected}, got "
-                    f"{actual} — possible dropped samples]")
-        warn = warn + mismatch
-        print(f"WARNING:{mismatch}", file=sys.stderr)
+    # Post-write assembly (byte-count check, sha256, sidecar, entry
+    # parts) runs under the same zero-orphan umbrella: any failure here
+    # leaves the channel files orphaned, so the cleanup owns the FULL
+    # file set inside the backend, where it is known. main keeps its
+    # existing handlers (ValueError -> house error + rc 2).
+    try:
+        expected = BYTES_PER_SAMPLE * target * len(paths)
+        actual = sum(p.stat().st_size for p in paths)
+        if actual != expected:
+            mismatch = (f" [byte-count warning: expected {expected}, got "
+                        f"{actual} — possible dropped samples]")
+            warn = warn + mismatch
+            print(f"WARNING:{mismatch}", file=sys.stderr)
 
-    shas = [manifest_mod.compute_sha256(str(p)) for p in paths]
-    _write_sidecar(sidecar, ns, cfg, achieved, ratio, n_reads,
-                   per_channel[0].size, shas)
-    # rf_chain context belongs to the entry's operator_notes (the schema's
-    # rf_chain object stays reserved for splitter/cable metadata).
-    ns.notes = (ns.notes + f" [rf_chain: {cfg['rf_chain']}]").strip()
-    parts = entry_parts(ns, str(base), shas if dual else shas[0], warn=warn)
-    parts["size_bytes"] = actual
-    parts["sidecar_path"] = str(sidecar)
-    return parts
+        shas = [manifest_mod.compute_sha256(str(p)) for p in paths]
+        _write_sidecar(sidecar, ns, cfg, achieved, ratio, n_reads,
+                       per_channel[0].size, shas)
+        # rf_chain context belongs to the entry's operator_notes (the
+        # schema's rf_chain object stays reserved for splitter/cable
+        # metadata).
+        ns.notes = (ns.notes + f" [rf_chain: {cfg['rf_chain']}]").strip()
+        parts = entry_parts(ns, str(base), shas if dual else shas[0],
+                            warn=warn)
+        parts["size_bytes"] = actual
+        parts["sidecar_path"] = str(sidecar)
+        return parts
+    except BaseException:
+        _discard(paths, sidecar)
+        raise
 
 
 def fm_scan_bins() -> list:

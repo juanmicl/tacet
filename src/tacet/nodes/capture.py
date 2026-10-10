@@ -298,8 +298,12 @@ def main(argv=None) -> int:
         # dependency missing (pyadi extra) — both printed verbatim, rc 2.
         print(exc, file=sys.stderr)
         return 2
-    bytes_per_second = (getattr(backend, "BYTES_PER_SECOND", None)
-                        or BYTES_PER_SAMPLE * FS)
+    # Disk-headroom estimate: backends source an on-disk byte rate per
+    # scenario (pluto: bytes_per_second(scenario) from SCENARIO_CONFIG);
+    # without it, fall back to the HackRF cs8 rate.
+    bps_fn = getattr(backend, "bytes_per_second", None)
+    bytes_per_second = (bps_fn(args.scenario) if bps_fn is not None
+                        else BYTES_PER_SAMPLE * FS)
     est_bytes = bytes_per_second * args.duration_s
     free = shutil.disk_usage(str(root)).free
     if free < 2 * est_bytes:

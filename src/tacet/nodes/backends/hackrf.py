@@ -7,27 +7,28 @@ hygiene (session dirs and timestamps, disk headroom, dry-run, manifest
 append, orphan prune) lives in the front-end: tacet.nodes.capture.
 Never transmits: the HackRF only records.
 
-Contract surface consumed by the front-end (tacet.nodes.capture); Task 3
-implements the same surface for pluto:
-
-- ``SCENARIOS: dict`` — scenario name -> one-line description (the CLI
-  menu is the union across registered backends).
-- ``validate(args) -> None`` — device-envelope validation of the parsed
-  CLI args; raises ValueError with a user-facing message.
-- ``check_available() -> None`` — raises RuntimeError when the device
-  tooling is unusable (message printed verbatim, exit code 2).
-- ``capture_once(ns, session_dir, index) -> dict | None`` — one capture;
-  returns the backend entry parts (device, protocol, purpose,
-  center_freq_hz, sample_rate_sps, format, band, channels + sha256,
-  gain, plus ``notes_warn``/``size_bytes`` extras). None means there is
-  nothing to record: the device run failed (partial files removed) or,
-  for future backends, the scenario has no capture step after its scan.
-- ``scan(ns, session_dir) -> str | None`` (optional; generic alias for
-  ``o4_scan``) — dwell-scan before the capture step; returns the winning
-  center in MHz, or None when no bin produced a dwell capture.
-- ``entry_parts(ns, path, sha256, warn="") -> dict`` — parts assembly
-  WITHOUT touching hardware; the front-end's dry-run path consumes this
-  to preview the entry.
+Backend contract (the full surface the front-end resolves on the
+registered backend module via getattr, identical for every backend in
+BACKENDS): ``SCENARIOS`` (scenario name -> one-line description; the
+CLI menu is the union across backends), ``validate(args)`` (device
+envelope, raises ValueError with a user-facing message, exit code 2
+before anything is touched), ``check_available()`` (raises when the
+device tooling is unusable; message printed verbatim),
+``capture_once(ns, session_dir, index) -> dict | None`` (one capture;
+returns the backend entry parts — device, protocol, purpose,
+center_freq_hz, sample_rate_sps, format, band, channels + sha256,
+gain, plus ``notes_warn``/``size_bytes`` extras; None means nothing to
+record: the device run failed with partial files removed, or a
+scenario has no capture step after its scan), ``entry_parts(ns, path,
+sha256, warn="")`` (parts assembly without touching hardware, consumed
+by the dry-run preview), the optional scan tuple ``scan(ns,
+session_dir) -> str | None`` / ``scan_requested(ns) -> bool`` /
+``scan_plan(ns)`` (scan scenarios resolve their center before the
+capture), and the optional dry-run/disk hooks ``print_plan(ns,
+rel_path)``, ``FILE_EXT``, ``SESSION_SUBDIR`` (scenario -> data/
+subdir mapping, default signature_capture) and ``bytes_per_second(
+scenario)`` (on-disk byte rate for the disk-headroom estimate; without
+it the front-end falls back to the HackRF cs8 rate).
 """
 
 import math

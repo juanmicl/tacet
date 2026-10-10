@@ -288,12 +288,14 @@ def test_validate_envelope_pluto():
             raise AssertionError(f"must reject freq {bad.freq_mhz}")
         except ValueError:
             pass
-    # Duration caps are per scenario: the 20 Msps mono o4-capture is RAM
-    # bound (60 s), the 2.56 Msps scenarios run to 660 s.
-    pluto.validate(_ns(98.5, 660.0, 40.0, scenario="coherence-cal"))
-    pluto.validate(_ns(5800, 60.0, 40.0))      # o4-capture at its cap: pass
-    for bad in [_ns(98.5, 661.0, 40.0, scenario="coherence-cal"),
-                _ns(5800, 60.1, 40.0)]:
+    # Duration caps are per scenario and RAM-bound: pyadi rx() delivers
+    # complex128 (16 B/sample) and capture_once accumulates all buffers
+    # before one concatenate (~2x peak). The 20 Msps mono o4-capture
+    # caps at 15 s, the 2.56 Msps dual scenarios at 120 s.
+    pluto.validate(_ns(98.5, 120.0, 40.0, scenario="coherence-cal"))
+    pluto.validate(_ns(5800, 15.0, 40.0))      # o4-capture at its cap: pass
+    for bad in [_ns(98.5, 120.5, 40.0, scenario="coherence-cal"),
+                _ns(5800, 15.5, 40.0)]:
         try:
             pluto.validate(bad)
             raise AssertionError(f"must reject duration {bad.duration_s} "
@@ -599,6 +601,31 @@ def test_byte_count_warning_path():
         assert "byte-count" in entry["operator_notes"]
         files = list(Path("data").rglob("*.cs16"))
         assert len(files) == 1                       # capture kept
+
+
+def test_post_write_failure_cleans_file_set():
+    # A failure in the post-write assembly (sidecar write here) after
+    # the channel files are on disk must still remove the FULL file set:
+    # files gone, no manifest entry, the error surfaces.
+    def boom(*args, **kwargs):
+        raise OSError("disk full while writing the sidecar")
+
+    dual_ns = SimpleNamespace(
+        scenario="coherence-cal", freq_mhz=98.5, duration_s=1.0,
+        gain_db=40.0, uri="ip:fake", notes="", antenna="ANT500",
+        label="interference", condition="bench", distance_m=None,
+        environment="indoor_bench", los=None, contributor="juanmicl",
+        elrs_profile=None, power=None)
+    with _pluto_ctx(rx_fn=dual_rx_fn()):
+        with mock.patch.object(pluto, "_write_sidecar", boom):
+            try:
+                pluto.capture_once(dual_ns, Path("data/coherence_cal/S"), 0)
+                raise AssertionError("expected the sidecar failure")
+            except OSError as exc:
+                assert "sidecar" in str(exc)
+        assert [p for p in Path("data").rglob("*") if p.is_file()] == []
+        # the empty session dirs stay: dir pruning is front-end-owned
+        assert not Path("manifest.json").exists()
 
 
 if __name__ == "__main__":
