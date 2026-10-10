@@ -6,5 +6,5 @@ check_available(), capture_once(ns, session_dir, index) -> entry parts,
 and an optional scan(args, session_dir). Backends own config assembly,
 file writes, sha256 per file, byte-count checks, and the device/format/
 gain/channel parts of the manifest entry; session hygiene stays in the
-front-end. hackrf today; pluto arrives with the Pluto+ bring-up.
+front-end. hackrf and pluto today.
 """

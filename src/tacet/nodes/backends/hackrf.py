@@ -300,3 +300,23 @@ def o4_scan(ns, session_dir: Path):
 # Generic contract name: the front-end dispatches the optional scan step
 # via getattr(backend, "scan").
 scan = o4_scan
+
+
+# --- Generic-contract additions (Task 3) -------------------------------------
+# The front-end dispatches the scan step via backend.scan_requested(ns) and
+# prints the dry-run plan via backend.scan_plan(ns). These additions keep
+# the pre-pluto behavior byte-identical (o4-scan is the only hackrf scan).
+
+SCAN_SCENARIOS = frozenset({"o4-scan"})
+
+
+def scan_requested(ns) -> bool:
+    """True when ``ns.scenario`` resolves its center via a scan step."""
+    return ns.scenario in SCAN_SCENARIOS
+
+
+def scan_plan(ns) -> None:
+    """Dry-run plan output for the scan scenario."""
+    bins = o4_scan_bins()
+    print(f"o4-scan plan: {len(bins)} bins, dwell {ns.dwell_s} s")
+    print("bins (MHz): " + " ".join(str(b) for b in bins))

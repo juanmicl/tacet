@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from tacet.loaders import manifest as manifest_mod
-from tacet.nodes.backends import hackrf
+from tacet.nodes.backends import hackrf, pluto
 
 # --- Re-exports: symbols moved to the hackrf backend ------------------------
 # Kept importable (and patchable) as capture.<symbol> because the existing
@@ -42,8 +42,31 @@ build_argv = hackrf.build_argv
 build_entry = hackrf.build_entry
 
 # Registered device backends; the CLI scenario menu is the union of their
-# SCENARIOS registries. The Pluto+ backend registers here in its task.
-BACKENDS = {"hackrf": hackrf}
+# SCENARIOS registries.
+BACKENDS = {"hackrf": hackrf, "pluto": pluto}
+
+
+def _session_root(backend, scenario: str) -> Path:
+    """data/<subdir> session root for a scenario.
+
+    Backends may map scenarios to a dedicated subdir (the pluto
+    coherence-cal sessions live under data/coherence_cal/, notebook 02's
+    layout); everything else stays in data/signature_capture/.
+    """
+    mapping = getattr(backend, "SESSION_SUBDIR", {})
+    return Path("data") / mapping.get(scenario, "signature_capture")
+
+
+def _scenario_menu() -> list:
+    """Union of scenario names across registered backends (the CLI menu).
+
+    A name may exist on several devices (e.g. ``control``); the
+    scenario x device resolution after parsing rejects invalid pairs.
+    """
+    names: set = set()
+    for dev in BACKENDS.values():
+        names.update(dev.SCENARIOS)
+    return sorted(names)
 
 
 def validate_power(power_mw: float | None) -> None:
@@ -118,7 +141,7 @@ def main(argv=None) -> int:
                     "record, never transmit).",
     )
     parser.add_argument(
-        "scenario", nargs="?", choices=sorted(SCENARIOS),
+        "scenario", nargs="?", choices=sorted(_scenario_menu()),
         help="capture scenario (see --list)",
     )
     parser.add_argument(
@@ -128,17 +151,30 @@ def main(argv=None) -> int:
     parser.add_argument(
         "--freq-mhz", type=float, default=None,
         help="center frequency in MHz (required for o4-fixed/control; "
-             "default 2440 for elrs-bench)",
+             "default 2440 for elrs-bench, 98.5 for pluto coherence-cal)",
+    )
+    parser.add_argument(
+        "--uri", default="ip:192.168.2.1",
+        help="Pluto+ URI (default: ip:192.168.2.1)",
+    )
+    parser.add_argument(
+        "--gain-db", type=float, default=None,
+        help="Pluto+ RX hardware gain in dB, 0-74.5 (required for pluto)",
+    )
+    parser.add_argument(
+        "--scan-fm", action="store_true",
+        help="pluto coherence-cal: scan 88-108 MHz for the strongest FM "
+             "carrier before the capture",
     )
     parser.add_argument("--duration-s", type=float, default=5.0)
     parser.add_argument("--lna", type=int, default=32)
     parser.add_argument("--vga", type=int, default=32)
     parser.add_argument(
-        "--label", required=True,
+        "--label",
         choices=["elrs", "dji_o4", "analog_fpv", "background", "interference"],
         help="ML signal class in the recording (required, manifest v2)")
     parser.add_argument(
-        "--condition", required=True,
+        "--condition",
         choices=["bench", "flying", "walk", "tx_off"],
         help="experimental condition (required, manifest v2)")
     parser.add_argument(
@@ -176,11 +212,20 @@ def main(argv=None) -> int:
 
     if args.list:
         for dev_name, dev in sorted(BACKENDS.items()):
+            print(f"{dev_name}:")
             for scenario, desc in dev.SCENARIOS.items():
-                print(f"{scenario}: {desc}")
+                print(f"  {scenario}: {desc}")
         return 0
     if args.scenario is None:
         parser.error("a scenario is required (see --list)")
+    # --label/--condition stay required for every real run; they are
+    # checked here (not via argparse required=True) so `--list` works.
+    missing = [opt for opt, val in (("--label", args.label),
+                                    ("--condition", args.condition))
+               if val is None]
+    if missing:
+        parser.error("the following arguments are required: "
+                     + ", ".join(missing))
 
     # Scenario x device resolution: reject unsupported pairs.
     backend = BACKENDS[args.device]
@@ -199,8 +244,8 @@ def main(argv=None) -> int:
     if args.power is not None and args.scenario != "elrs-bench":
         print("error: --power applies to elrs-bench only", file=sys.stderr)
         return 2
-    if args.scenario != "o4-scan":
-        # o4-scan resolves its center from the dwell scan below.
+    if not backend.scan_requested(args):
+        # Scan scenarios resolve their center from the scan below.
         try:
             args.freq_mhz = backend.build_center_hz(args.scenario, args)
             # Unmapped frequencies must fail BEFORE any hardware run,
@@ -217,10 +262,8 @@ def main(argv=None) -> int:
               "rate/mode (e.g. D500) so captures stay comparable",
               file=sys.stderr)
     if args.dry_run:
-        if args.scenario == "o4-scan" and args.freq_mhz is None:
-            bins = hackrf.o4_scan_bins()
-            print(f"o4-scan plan: {len(bins)} bins, dwell {args.dwell_s} s")
-            print("bins (MHz): " + " ".join(str(b) for b in bins))
+        if backend.scan_requested(args) and args.freq_mhz is None:
+            backend.scan_plan(args)
             return 0
         try:
             freq_mhz = backend.build_center_hz(args.scenario, args)
@@ -228,44 +271,54 @@ def main(argv=None) -> int:
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
-        n_samples = int(round(args.duration_s * FS))
         session_dir = (
-            Path("data") / "signature_capture"
+            _session_root(backend, args.scenario)
             / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
-        rel_path = str(session_dir / f"{args.scenario}_000.cs8")
+        rel_path = str(session_dir / f"{args.scenario}_000"
+                       f"{getattr(backend, 'FILE_EXT', '.cs8')}")
         parts = backend.entry_parts(args, rel_path, sha256="(dry-run)")
         entry = assemble_entry(parts, args, session_dir, 0)
         print(f"repo root: {root}")
-        print(" ".join(build_argv(
-            int(freq_mhz * 1e6), n_samples, args.lna, args.vga, rel_path)))
+        print_plan = getattr(backend, "print_plan", None)
+        if print_plan is not None:
+            print_plan(args, rel_path)
+        else:
+            n_samples = int(round(args.duration_s * FS))
+            print(" ".join(build_argv(
+                int(freq_mhz * 1e6), n_samples, args.lna, args.vga,
+                rel_path)))
         print(json.dumps(entry, indent=2))
         return 0
 
     # Real capture path.
     try:
         backend.check_available()
-    except RuntimeError as exc:
+    except (RuntimeError, ValueError) as exc:
+        # RuntimeError: hackrf device tooling missing; ValueError: pluto
+        # dependency missing (pyadi extra) — both printed verbatim, rc 2.
         print(exc, file=sys.stderr)
         return 2
-    est_bytes = BYTES_PER_SAMPLE * FS * args.duration_s
+    bytes_per_second = (getattr(backend, "BYTES_PER_SECOND", None)
+                        or BYTES_PER_SAMPLE * FS)
+    est_bytes = bytes_per_second * args.duration_s
     free = shutil.disk_usage(str(root)).free
     if free < 2 * est_bytes:
         print(f"insufficient disk: need ~{est_bytes/1e6:.0f} MB, "
               f"free {free/1e6:.0f} MB", file=sys.stderr)
         return 2
     session_dir = (
-        Path("data") / "signature_capture"
+        _session_root(backend, args.scenario)
         / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
     session_dir.mkdir(parents=True, exist_ok=True)
     try:
         # Generic backend contract: an optional scan() resolves the
         # center for scan scenarios before the capture step.
         scan_fn = getattr(backend, "scan", None)
-        if args.scenario == "o4-scan":
+        if scan_fn is not None and backend.scan_requested(args):
             winner = scan_fn(args, session_dir)
             if winner is None:
                 _prune_empty_dirs(session_dir)
-                print("o4-scan: no bin produced a dwell capture",
+                print(f"{args.scenario}: no bin produced a dwell capture",
                       file=sys.stderr)
                 return 2
             args.freq_mhz = float(winner)
@@ -274,7 +327,21 @@ def main(argv=None) -> int:
             _prune_empty_dirs(session_dir)  # backend removed its files
             return 2
         entry = assemble_entry(parts, args, session_dir, 0)
-        manifest_mod.append_entry(entry)
+        try:
+            manifest_mod.append_entry(entry)
+        except ValueError as exc:
+            # Zero-orphan: the manifest rejected the entry (e.g. a
+            # duplicate id) AFTER the files were written — remove this
+            # capture's full file set (channel files + sidecar) so no
+            # orphan data survives, manifest stays byte-unchanged.
+            for ch in parts.get("channels", []):
+                Path(ch["path"]).unlink(missing_ok=True)
+            sidecar = parts.get("sidecar_path")
+            if sidecar:
+                Path(sidecar).unlink(missing_ok=True)
+            _prune_empty_dirs(session_dir)
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
         print(f"captured {parts['channels'][0]['path']} "
               f"({parts['size_bytes']} bytes){parts['notes_warn']}")
     except KeyboardInterrupt:
