@@ -96,7 +96,7 @@
       "type": "string"
     },
     "band": {
-      "enum": ["2.4 GHz ISM", "5.8 GHz ISM", "5.1 GHz EU", "UHF DVB-T"],
+      "enum": ["2.4 GHz ISM", "5.8 GHz ISM", "5.1 GHz EU", "UHF DVB-T", "VHF FM broadcast"],
       "description": "ALWAYS the physical band of center_freq_hz, never a class label."
     },
     "label": {

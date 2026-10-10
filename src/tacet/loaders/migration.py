@@ -36,6 +36,8 @@ def band_for_freq_hz(hz: float) -> str:
     ``band_for_freq_mhz`` delegates here.
     """
     mhz = hz / 1e6
+    if 87.5 <= mhz < 108:
+        return "VHF FM broadcast"
     if 2400 <= mhz <= 2500:
         return "2.4 GHz ISM"
     if 5100 <= mhz <= 5250:
