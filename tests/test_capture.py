@@ -295,7 +295,10 @@ def test_o4_scan_picks_winner_and_cleans_failed_bin():
         return R()
 
     with _fake_repo_ctx(), contextlib.redirect_stdout(io.StringIO()):
-        with mock.patch.object(capture, "o4_scan_bins", lambda: bins), \
+        # o4_scan_bins lives in the hackrf backend post-extraction; the
+        # dwell loop reads it from there at call time.
+        with mock.patch("tacet.nodes.backends.hackrf.o4_scan_bins",
+                        lambda: bins), \
              mock.patch.object(capture.subprocess, "run", selective_run):
             err = io.StringIO()
             with contextlib.redirect_stderr(err):
