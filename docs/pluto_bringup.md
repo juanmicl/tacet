@@ -78,7 +78,9 @@ empirical from the 2026-10-10 session:
 USB drop and re-enumeration (ledgered 2026-10-10, about 12:40): the
 board vanished from the USB bus (RNDIS unregister, re-enumerated as a
 new device) and GbE went down with it. Recovery: replug the USB cable;
-power-cycle from the 5 V supply if the device does not come back. The
+if the device does not come back, power-cycle from the 5 V supply
+(that last step is untested extrapolation: the logged event recovered
+by replug alone is still pending confirmation). The
 capture CLI behaved correctly during the event: it failed with a clean
 error, leaving no files and no manifest entry.
 
@@ -163,6 +165,14 @@ Scan for the strongest carrier first:
 uv run tacet capture coherence-cal --device pluto --uri ip:169.254.2.35 \
   --gain-db 40 --label interference --condition bench \
   --scan-fm --dry-run
+```
+
+Expected first lines (the bins list ends at 107.8, confirming the
+exclusive upper edge):
+
+```
+fm-scan plan: 100 bins, 88-108 MHz step 200 kHz, settle 0.1 s per bin
+bins (MHz): 88.0 88.2 ... 107.8
 ```
 
 The scan sweeps 88.0 to 107.8 MHz in 200 kHz bins (exclusive at
