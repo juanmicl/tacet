@@ -642,6 +642,216 @@
         "mode": "manual",
         "rx1_db": 40.0
       }
+    },
+    {
+      "id": "20261010T140620Z_win2440",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T14:06:28.261017+00:00",
+      "device": "pluto_plus",
+      "protocol": "elrs",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2440000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 5.89824,
+      "channels": [
+        {
+          "path": "data/elrs_pluto/20261010T140620Z/win2440.cs16",
+          "sha256": "44b7f376c55638fe628398187994d4c6bbd2a2f296ad5331de18dab2992812d8"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (in-band at 2.4)",
+      "operator_notes": "ELRS re-measurement via Pluto+ (vs 2026-09-19 HackRF table); Boxer 100 mW fixed, drone off, bench ~1 m; 2 Msps window (bins 1.95 kHz; HackRF table used 19.5 kHz bins); rates min 1.57 med 1.60 Msps",
+      "band": "2.4 GHz ISM",
+      "label": "elrs",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      },
+      "elrs_profile": "D500"
+    },
+    {
+      "id": "20261010T140628Z_win2450",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T14:06:36.457255+00:00",
+      "device": "pluto_plus",
+      "protocol": "elrs",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2450000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 5.89824,
+      "channels": [
+        {
+          "path": "data/elrs_pluto/20261010T140628Z/win2450.cs16",
+          "sha256": "165b34b5be1e376cb5ad9da17830cf013c08fa3a9863a5d21f36e92b2bec6557"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (in-band at 2.4)",
+      "operator_notes": "ELRS re-measurement via Pluto+ (vs 2026-09-19 HackRF table); Boxer 100 mW fixed, drone off, bench ~1 m; 2 Msps window (bins 1.95 kHz; HackRF table used 19.5 kHz bins); rates min 1.54 med 1.58 Msps",
+      "band": "2.4 GHz ISM",
+      "label": "elrs",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      },
+      "elrs_profile": "D500"
+    },
+    {
+      "id": "20261010T140636Z_win2465",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T14:06:44.640775+00:00",
+      "device": "pluto_plus",
+      "protocol": "elrs",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2465000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 5.89824,
+      "channels": [
+        {
+          "path": "data/elrs_pluto/20261010T140636Z/win2465.cs16",
+          "sha256": "843db7e602cd5f89566b6c42be17aabdcf10227adb441d3990930cf7853cc80d"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (in-band at 2.4)",
+      "operator_notes": "ELRS re-measurement via Pluto+ (vs 2026-09-19 HackRF table); Boxer 100 mW fixed, drone off, bench ~1 m; 2 Msps window (bins 1.95 kHz; HackRF table used 19.5 kHz bins); rates min 1.54 med 1.58 Msps",
+      "band": "2.4 GHz ISM",
+      "label": "elrs",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      },
+      "elrs_profile": "D500"
+    },
+    {
+      "id": "20261010T140714Z_win2440",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T14:07:22.026841+00:00",
+      "device": "pluto_plus",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2440000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 5.89824,
+      "channels": [
+        {
+          "path": "data/elrs_pluto/20261010T140714Z/win2440.cs16",
+          "sha256": "677dcd73dd587d7c45a9daaa6953d186272b24a62687a4dec6e09c265d9a2382"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (in-band at 2.4)",
+      "operator_notes": "matched control for the ELRS Pluto+ re-measurement (Boxer OFF); rates min 1.52 med 1.60",
+      "band": "2.4 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      },
+      "elrs_profile": "D500"
+    },
+    {
+      "id": "20261010T140722Z_win2450",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T14:07:30.033729+00:00",
+      "device": "pluto_plus",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2450000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 5.89824,
+      "channels": [
+        {
+          "path": "data/elrs_pluto/20261010T140722Z/win2450.cs16",
+          "sha256": "9e9c624ef58d7083c2f859b8dbb1d5e7de07a4046b5321a637bc35d789ca0efc"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (in-band at 2.4)",
+      "operator_notes": "matched control for the ELRS Pluto+ re-measurement (Boxer OFF); rates min 1.54 med 1.60",
+      "band": "2.4 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      },
+      "elrs_profile": "D500"
+    },
+    {
+      "id": "20261010T140730Z_win2465",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T14:07:38.233519+00:00",
+      "device": "pluto_plus",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 2465000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 5.89824,
+      "channels": [
+        {
+          "path": "data/elrs_pluto/20261010T140730Z/win2465.cs16",
+          "sha256": "29f8b438a967d5581c02cb9a6f999a444a3513279a11e362924aeedabda6d2e7"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (in-band at 2.4)",
+      "operator_notes": "matched control for the ELRS Pluto+ re-measurement (Boxer OFF); rates min 1.48 med 1.58",
+      "band": "2.4 GHz ISM",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      },
+      "elrs_profile": "D500"
     }
   ]
 }
