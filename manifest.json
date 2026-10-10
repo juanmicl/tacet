@@ -506,6 +506,142 @@
         "lna_db": 8,
         "vga_db": 8
       }
+    },
+    {
+      "id": "20261010T134515Z_o4-bench_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T13:45:37.844147+00:00",
+      "device": "pluto_plus",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5198000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 15.72864,
+      "channels": [
+        {
+          "path": "data/o4_signature/20261010T134515Z/o4-bench_000.cs16",
+          "sha256": "2073e064daa29f61c9f4912c5b9829934ef516a2276d92b4ca2468dce87438aa"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (detuned at 5.1)",
+      "operator_notes": "null result: intended O4 signature at 5198 but the quad battery was disconnected before the capture ran; verified pure background (mean 7.6 dBFS vs 41.3 dBFS seen in the 13:43 fine sweep); kept as an honest null",
+      "band": "5.1 GHz EU",
+      "label": "background",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      }
+    },
+    {
+      "id": "20261010T134625Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T13:46:36.229911+00:00",
+      "device": "pluto_plus",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5198000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 7.86432,
+      "channels": [
+        {
+          "path": "data/o4_signature/20261010T134625Z/control_000.cs16",
+          "sha256": "94a9240f8f60d74b062cf87edc2a4580e7408228c4812a341d3d6cb187e2a848"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (detuned at 5.1)",
+      "operator_notes": "background control at 5198 (matched bin/gain/rate of the null 20261010T134515Z capture); quad battery disconnected",
+      "band": "5.1 GHz EU",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      }
+    },
+    {
+      "id": "20261010T135223Z_o4-bench-bench_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T13:52:23.921605+00:00",
+      "device": "pluto_plus",
+      "protocol": "dji_o4",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5196000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 11.79648,
+      "channels": [
+        {
+          "path": "data/o4_signature/20261010T135208Z/o4-bench_000.cs16",
+          "sha256": "bac1a9fe8f00cf6bf8dfea6cac4d9d4083394626e01d92773d5a955235bc1e46"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (detuned at 5.1)",
+      "operator_notes": "O4 signature; agile link: coarse winner 5200 then fine winner 5196 at 40.7 dBFS (+32.9 dB over floor 7.8); capture started <1 s after sweep; rates min 1.56 med 1.60; goggles linked props off; gain 40 manual",
+      "band": "5.1 GHz EU",
+      "label": "dji_o4",
+      "condition": "bench",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      }
+    },
+    {
+      "id": "20261010T135332Z_control_000",
+      "schema_version": "2.0",
+      "timestamp": "2026-10-10T13:53:32.829637+00:00",
+      "device": "pluto_plus",
+      "protocol": "noise",
+      "purpose": "signature_capture",
+      "center_freq_hz": 5196000000.0,
+      "sample_rate_sps": 2000000.0,
+      "format": "cs16",
+      "duration_s": 11.79648,
+      "channels": [
+        {
+          "path": "data/o4_signature/20261010T135315Z/control_000.cs16",
+          "sha256": "8322795f22c73d3b2d03becf88642c556635dd67d0c2ecee3d003413bffb897b"
+        }
+      ],
+      "antenna": "dual-band 2.4/5.8 SMA (detuned at 5.1)",
+      "operator_notes": "matched control at 5196.0 MHz; quad battery disconnected; rates min 1.52 med 1.60",
+      "band": "5.1 GHz EU",
+      "label": "background",
+      "condition": "tx_off",
+      "distance_m": null,
+      "environment": "indoor_bench",
+      "los": null,
+      "contributor": "juanmicl",
+      "source": "own_capture",
+      "consent": "private",
+      "site_anonymized": true,
+      "gain": {
+        "mode": "manual",
+        "rx1_db": 40.0
+      }
     }
   ]
 }
