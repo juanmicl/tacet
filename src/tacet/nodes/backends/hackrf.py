@@ -6,6 +6,28 @@ checks, sha256, and the HackRF parts of the manifest entry. Session
 hygiene (session dirs and timestamps, disk headroom, dry-run, manifest
 append, orphan prune) lives in the front-end: tacet.nodes.capture.
 Never transmits: the HackRF only records.
+
+Contract surface consumed by the front-end (tacet.nodes.capture); Task 3
+implements the same surface for pluto:
+
+- ``SCENARIOS: dict`` — scenario name -> one-line description (the CLI
+  menu is the union across registered backends).
+- ``validate(args) -> None`` — device-envelope validation of the parsed
+  CLI args; raises ValueError with a user-facing message.
+- ``check_available() -> None`` — raises RuntimeError when the device
+  tooling is unusable (message printed verbatim, exit code 2).
+- ``capture_once(ns, session_dir, index) -> dict | None`` — one capture;
+  returns the backend entry parts (device, protocol, purpose,
+  center_freq_hz, sample_rate_sps, format, band, channels + sha256,
+  gain, plus ``notes_warn``/``size_bytes`` extras). None means there is
+  nothing to record: the device run failed (partial files removed) or,
+  for future backends, the scenario has no capture step after its scan.
+- ``scan(ns, session_dir) -> str | None`` (optional; generic alias for
+  ``o4_scan``) — dwell-scan before the capture step; returns the winning
+  center in MHz, or None when no bin produced a dwell capture.
+- ``entry_parts(ns, path, sha256, warn="") -> dict`` — parts assembly
+  WITHOUT touching hardware; the front-end's dry-run path consumes this
+  to preview the entry.
 """
 
 import math
@@ -273,3 +295,8 @@ def o4_scan(ns, session_dir: Path):
         note = f"[o4-scan winner {best_mhz} MHz, peak {best_peak:.4g}]"
         ns.notes = (ns.notes + " " + note).strip()
     return best_mhz
+
+
+# Generic contract name: the front-end dispatches the optional scan step
+# via getattr(backend, "scan").
+scan = o4_scan

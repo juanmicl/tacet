@@ -61,6 +61,10 @@ def assemble_entry(parts: dict, ns, session_dir: Path, index: int) -> dict:
     dir, duration, and governance defaults. ``parts`` carries the
     backend fragments: device, protocol, purpose, center frequency,
     sample rate, format, band, channels (+sha256), gain, and extras.
+
+    ns attributes read: scenario, duration_s, notes, antenna, label,
+    condition, distance_m, environment, los, contributor — plus the
+    optional elrs_profile and power.
     """
     entry = {
         "id": f"{session_dir.name}_{ns.scenario}_{int(index):03d}",
@@ -83,9 +87,10 @@ def assemble_entry(parts: dict, ns, session_dir: Path, index: int) -> dict:
         "environment": ns.environment,
         "los": ns.los,                          # required-nullable: explicit
         "contributor": ns.contributor,
-        "source": parts.get("source", "own_capture"),
-        "consent": parts.get("consent", "private"),
-        "site_anonymized": parts.get("site_anonymized", True),
+        # Governance stays front-end-owned: backends cannot override it.
+        "source": "own_capture",
+        "consent": "private",
+        "site_anonymized": True,
         "gain": parts["gain"],
     }
     if getattr(ns, "elrs_profile", None) is not None:
@@ -213,7 +218,7 @@ def main(argv=None) -> int:
               file=sys.stderr)
     if args.dry_run:
         if args.scenario == "o4-scan" and args.freq_mhz is None:
-            bins = backend.o4_scan_bins()
+            bins = hackrf.o4_scan_bins()
             print(f"o4-scan plan: {len(bins)} bins, dwell {args.dwell_s} s")
             print("bins (MHz): " + " ".join(str(b) for b in bins))
             return 0
@@ -239,7 +244,7 @@ def main(argv=None) -> int:
     # Real capture path.
     try:
         backend.check_available()
-    except (RuntimeError, ValueError) as exc:
+    except RuntimeError as exc:
         print(exc, file=sys.stderr)
         return 2
     est_bytes = BYTES_PER_SAMPLE * FS * args.duration_s
@@ -253,8 +258,11 @@ def main(argv=None) -> int:
         / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
     session_dir.mkdir(parents=True, exist_ok=True)
     try:
+        # Generic backend contract: an optional scan() resolves the
+        # center for scan scenarios before the capture step.
+        scan_fn = getattr(backend, "scan", None)
         if args.scenario == "o4-scan":
-            winner = backend.o4_scan(args, session_dir)
+            winner = scan_fn(args, session_dir)
             if winner is None:
                 _prune_empty_dirs(session_dir)
                 print("o4-scan: no bin produced a dwell capture",
