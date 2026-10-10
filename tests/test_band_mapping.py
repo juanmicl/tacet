@@ -32,7 +32,7 @@ def test_fm_entry_schema_round_trip():
         "protocol": "fm_carrier",
         "purpose": "coherence_cal",
         "center_freq_hz": 98.5e6,
-        "sample_rate_sps": 20000000.0,
+        "sample_rate_sps": 2560000.0,
         "format": "cs16",
         "duration_s": 5.0,
         "channels": [
