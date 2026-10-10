@@ -44,6 +44,9 @@ Arduino/ESP32. Communicate in **Spanish**, code/comments/docs in **English**.
 
 - HackRF One (SMA female ports) + dual-band 2.4/5.8 GHz antenna
   (SMA male) + FPV goggle antennas (5.8 GHz, SMA male)
+- Pluto+ (AD9363, dual coherent RX, Ethernet streaming): bench capture
+  backend since 2026-10-10 (first job: the 5.1 GHz O4 measurements). TX
+  must stay permanently disabled (receive-only project).
 - RadioMaster Boxer (ELRS 2.4 GHz, configurable TX power 10–250 mW)
   — usable as a calibrated test transmitter WITHOUT flying
 - Test targets: 5" FPV quad (ELRS control + DJI O4 digital video) and a
@@ -55,17 +58,17 @@ Arduino/ESP32. Communicate in **Spanish**, code/comments/docs in **English**.
   20 Msps DSP), several ESP32s, SIM800C modules (future SMS alert channel
   only — 2G is dying in Spain, do not build anything critical on it)
 
-Planned (decided, not yet purchased): Pluto+ SDR (AD9363, 2× RX coherent,
-70 MHz–6 GHz, 20 MHz/ch, 12-bit, Ethernet streaming) as the passive radar
-unit. TX must stay permanently disabled (receive-only project). The
-telescopic ANT500 antenna (75 MHz–1 GHz) covers FM and DVB-T illuminator
-bands and will be the antenna for illuminator work.
+Planned (decided, not yet purchased): the telescopic ANT500 antenna
+(75 MHz–1 GHz) covers FM and DVB-T illuminator bands and will be the
+antenna for illuminator work.
 
 ## Current phase: P0 — bench characterization (RF first)
 
 Concrete goals, in order:
 
-1. Capture DJI O4 OFDM signature in 5.1–5.8 GHz. NOTE: in the EU, DJI O4
+1. Capture DJI O4 OFDM signature in 5.1–5.8 GHz. Measured 2026-10-10 via
+   the Pluto+; numbers in the O4 results section of
+   docs/p0_signature_report.md. NOTE: in the EU, DJI O4
    operates in **5.170–5.250 GHz** as well as 5.8 — scan both. Features to
    extract: bandwidth, duty cycle, spectral flatness, burst structure.
 2. Capture ELRS chirp signature at 2.4 GHz (Boxer at fixed power, e.g.
