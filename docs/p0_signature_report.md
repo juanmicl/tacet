@@ -41,9 +41,10 @@ project are only as good as these measured references.
 - All primitives have synthetic self-tests; the numbers below come from
   recordings, not simulations.
 
-## Results — DJI O4 video link (5.1/5.8 GHz)
+## Results — DJI O4 video link via HackRF (blocked)
 
-Status: **characterization blocked by receiver sensitivity**. The O4 air
+Status: **characterization blocked by receiver sensitivity** (superseded
+by the Pluto+ results below). The O4 air
 unit transmits (goggles receive video at all times), but the HackRF One
 cannot resolve the signal at 5.x GHz. Measured 2026-09-22.
 

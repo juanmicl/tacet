@@ -16,7 +16,10 @@ multi-target tracker. The system emits nothing, jams nothing, and does not
 assume a prime-contractor budget.
 
 > Status: early research and prototyping. Current phase: bench
-> characterization. Everything here is receive-only and legal for private
+> characterization, and well underway: ELRS and DJI O4 signatures measured
+> on the bench, first detectors built and honestly validated (one marginal,
+> one honest miss), and a public-dataset baseline done (DroneDetect, mean
+> AUC 0.795). Everything here is receive-only and legal for private
 > operators in the EU.
 
 ---
@@ -51,6 +54,13 @@ occupied frequency bins, 35% duty cycle. Full analysis in
 [notebooks/01_bench_overview.ipynb](notebooks/01_bench_overview.ipynb)
 and [docs/p0_signature_report.md](docs/p0_signature_report.md).
 
+The DJI O4 video link is the harder target: below the HackRF's noise floor
+at 5.8 GHz, it fell to the Pluto+ (AD9363). Measured on the bench at
++25.7 dB matched SNR in a 2 MHz bin, continuous transmission while the air
+unit is powered, channel wandering within 5.17-5.25 GHz. Numbers in the
+[O4 results section](docs/p0_signature_report.md#results--dji-o4-video-link-51-ghz-eu)
+of [docs/p0_signature_report.md](docs/p0_signature_report.md).
+
 ## Quickstart
 
 No SDR required: tests and notebooks run on synthetic signals.
@@ -59,19 +69,29 @@ No SDR required: tests and notebooks run on synthetic signals.
 git clone https://github.com/juanmicl/tacet
 cd tacet
 uv sync                                # numpy / scipy / matplotlib / pandas
-uv run python -m tests.test_coherence  # synthetic self-tests, no hardware
+uv run python -m tests                 # synthetic self-tests, all modules
+```
+
+Bench captures go through one device-agnostic CLI (dry-run touches
+nothing):
+
+```bash
+uv run tacet capture control --device pluto --freq-mhz 98.5 --gain-db 30 \
+    --label background --condition tx_off --dry-run
 ```
 
 Notebooks live in `notebooks/`, answer one question each, and run top to
 bottom against the project venv (notebook 02 falls back to clearly labeled
 synthetic data when no recordings exist). For bench captures with the
-Pluto+: `uv sync --extra acquisition`.
+Pluto+: `uv sync --extra acquisition`. Current index: 01 bench overview,
+02 Pluto+ coherence, 03 DroneDetect benchmark, 04 ELRS detector ROC,
+05 detector diagnosis, 06 modulation characterization, 07 DVDA validation.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    RF[RF Signature Node<br/>HackRF / RTL-SDR<br/>2.4 GHz ELRS · 5.8 GHz OFDM] --> F((Fusion<br/>Tracker<br/>GNN + EKF/UKF))
+    RF[RF Signature Node<br/>HackRF / RTL-SDR / Pluto+<br/>2.4 GHz ELRS · 5.1 GHz O4 · 5.8 GHz OFDM] --> F((Fusion<br/>Tracker<br/>GNN + EKF/UKF))
     AC[Acoustic Node<br/>MEMS mic array + ESP32<br/>bearing + rotor harmonics] --> F
     PR["Passive Radar<br/>Pluto+ (AD9363) coherent dual-RX, DVB-T illuminators<br/>range + Doppler + micro-Doppler"] --> F
     RID[Remote ID Sniffers<br/>ESP32 × N · BLE / WiFi NaN] --> F
@@ -99,20 +119,31 @@ flowchart LR
 | P5, Mesh | 2+ autonomous nodes (Pi + RTL-SDR), time-synced detections, TDOA geolocation | Multi-node geolocalized demo |
 | P6, Pilot | Real-site deployment, alerting, ops feedback | Field report + metrics |
 
+Progress so far: DroneDetect benchmark (notebook 03), ELRS occupancy and
+DVDA detectors (notebooks 04-07, honestly reported), O4 signature
+measured 2026-10-10.
+
 ## Hardware (current lab)
 
 - HackRF One + dual-band 2.4/5.8 antenna + FPV 5.8 antennas
+- Pluto+ (AD9363): dual coherent RX over Ethernet. In the lab since
+  2026-10-10 and already the bench capture backend for the 5.1 GHz O4
+  measurements; the planned passive-radar unit. Cheaper than a KrakenSDR
+  and, more importantly, it can actually capture a full 8 MHz DVB-T
+  channel.
 - 2× Raspberry Pi 3B+ (node brains) · ESP32 (Remote ID + acoustic DSP)
-- Planned: 2× RTL-SDR (~€60), MEMS I2S mics (~€20), and a Pluto+ (AD9363) as
-  the radar unit — cheaper than a KrakenSDR and, more importantly, it can
-  actually capture a full 8 MHz DVB-T channel.
+- Planned: 2× RTL-SDR (~€60), MEMS I2S mics (~€20)
 - Test targets: a 5" FPV quad (ELRS + DJI O4) and a 250 g FPV quad, both
   owned and legal
 
 ## Data strategy
 
 - Public baselines: DroneDetect (IEEE DataPort) and DroneRF, used with
-  proper attribution for pipeline validation and benchmarks.
+  proper attribution for pipeline validation and benchmarks. The
+  DroneDetect baseline is done and reproducible:
+  [notebooks/03_dronedetect_benchmark.ipynb](notebooks/03_dronedetect_benchmark.ipynb)
+  and
+  [docs/dronedetect_benchmark_report.md](docs/dronedetect_benchmark_report.md).
 - Own dataset: labeled IQ and acoustic recordings of modern FPV links
   (ELRS, DJI O4) at known distances, powers, and environments. To our
   knowledge no public dataset covers these; release policy is TBD.
@@ -127,7 +158,7 @@ flowchart LR
 repo/
 ├── src/tacet/    # package code: loaders (cs8/cs16/f32 → complex64,
 │                 # manifest ingestion), dsp (features, detectors),
-│                 # trackers + nodes orchestration (later)
+│                 # nodes: capture backends (HackRF, Pluto+); trackers later
 ├── tests/        # synthetic self-tests (import tacet.*)
 ├── notebooks/    # experiments (numbered, reproducible)
 ├── docs/         # experiment reports
