@@ -2,9 +2,10 @@
 
 Status: pipeline, CLI and self-tests in place (`uv run python -m tests`).
 **ELRS results measured** (2026-09-19 bench session, notebook
-`notebooks/01_bench_overview.ipynb` executed with outputs). DJI O4
-**blocked by receiver sensitivity**: HackRF One noise figure at 5.8 GHz
-is too high; Pluto+ (AD9363) required (see Results section below).
+`notebooks/01_bench_overview.ipynb` executed with outputs). **DJI O4 first
+signature measured 2026-10-10** via the Pluto+ (bench, 5.1 GHz EU band):
++25.7 dB matched SNR in a 2 MHz bin, continuous transmission when present,
+channel wanders within 5.17-5.25 GHz (Results section below).
 
 ## Goal
 
@@ -83,9 +84,53 @@ characterization:
 - the coherence characterization experiment (notebook 02) is already
   built and waiting for the hardware
 
-Until the Pluto+ arrives, O4 characterization remains blocked. The HackRF
-One is adequate for 2.4 GHz ELRS detection (demonstrated at +13 dB SNR
-at 1 m) and general wideband spectrum scanning.
+The Pluto+ arrived on 2026-10-10; the first O4 signature was measured the
+same day (Results section below). The HackRF One remains adequate for
+2.4 GHz ELRS detection (demonstrated at +13 dB SNR at 1 m) and general
+wideband spectrum scanning.
+
+## Results — DJI O4 video link (5.1 GHz EU)
+
+Measured 2026-10-10, bench, quad powered (props off, battery in, no
+goggles connected: the air unit emits standalone), Pluto+ RX1 with a
+2.4/5.8 dual-band whip (detuned at 5.1), gain 40 dB manual, 2 Msps
+analysis window placed by sweep on the live channel.
+
+| metric | value (5196 MHz, 11.8 s, matched control) |
+| --- | --- |
+| matched SNR (median, occupied bins) | +25.7 dB (p25 +24.0, p75 +27.3) |
+| per-bin occupied fraction (window) | 100% (signal fills the window) |
+| spectral flatness | 0.8914 |
+| occupied BW (99%, window-limited) | >= 1.95 MHz (channel ~6 MHz per sweep) |
+| duty while present at bin | 100% (continuous, no bursts) |
+| bin presence (131 ms blocks) | 46% of blocks hot (41/90) |
+| matched control (id) | 20261010T135315Z |
+
+Notes:
+
+- The analysis window is host-limited to 2 Msps (Python streaming ceiling
+  on this setup, measured the same day); the occupied-bandwidth figure is
+  a lower bound. The fine sweep saw a contiguous hot block of ~6 MHz
+  (5194-5202) and the true bandwidth needs the planned streaming capture
+  cycle at 10-20 Msps.
+- The channel is agile on a minutes scale: 5230 (13:40 sweep), 5194-5202
+  (13:43), 5196 (13:52). A detector must scan the 5.17-5.25 band rather
+  than watch one bin; the sweep-to-capture gap must be minimal (the
+  capture above started under 1 s after the sweep located the channel).
+- Capture continuity is ~78% of real time (retrieval gaps between 131 ms
+  blocks); duty and burst statistics are per-block and unaffected within
+  blocks.
+- An earlier same-day capture attempt at 5198 returned a verified null
+  (the quad battery was disconnected before it ran); it is kept in the
+  manifest as a labeled background/null record.
+- One session, bench distance, indoor. Numbers are bench-range
+  characterizations, not detection-range claims.
+
+**Headline: O4 at bench via Pluto+ is an easy energy target: +25.7 dB
+matched SNR in a single 2 MHz bin, continuous transmission while the
+channel is in the bin, and a flat OFDM-like spectrum that fills whatever
+window it is given. Detection difficulty is band coverage (agile channel
+within 5.17-5.25 GHz), not sensitivity.**
 
 ## Results — ELRS control link (2.4 GHz ISM)
 
@@ -152,6 +197,14 @@ captures — detector design must account for dwell time per window.**
    nominally the same bench distance showed ~9 dB variation, consistent
    with 2-3x actual distance differences (6 dB per doubling). Calibrated
    distance measurements (walk-tests) will resolve this.
+ 6. **O4 detection is a coverage problem, not a sensitivity problem**:
+    +25.7 dB matched SNR in a 2 MHz bin at bench means a simple energy
+    detector works once the bin is on the channel; the channel wanders
+    within 5.17-5.25 GHz on a minutes scale, so the detector scans the
+    band (a handful of 2 MHz bins or one wide window). The flat,
+    window-filling spectrum (flatness 0.89) distinguishes O4 from WiFi
+    bursts; continuous occupancy while present distinguishes it from
+    ELRS duty-cycled hopping.
 
 ## Honest-results note
 
@@ -167,8 +220,9 @@ only works on clean synthetic data will be documented as exactly that.
 Full plots and per-capture detail: `notebooks/01_bench_overview.ipynb`.
 Reading rules of thumb:
 
-- Flatness near 1 with a wide occupied bandwidth and a bursty envelope is
-  the OFDM-like video signature; flatness near 0 means a few dominant
+- Flatness near 1 with a wide occupied bandwidth is the OFDM-like video
+  signature; measured O4 is continuous while present (duty 100% within
+  blocks), unlike ELRS hopping. Flatness near 0 means a few dominant
   bins (tones), which is neither O4 nor noise.
 - ELRS chirps appear as diagonal ridges in the spectrogram; a single
   20 MHz window sees only the hops landing inside it, so the reported duty
@@ -181,13 +235,18 @@ Reading rules of thumb:
 ## Safety
 
 Receive-only throughout: the HackRF runs `hackrf_transfer -r` and nothing
-else. No jamming, no injection, no transmissions from our equipment. Bench
-transmissions come only from the Boxer and the quads under test, props
-off, at legal powers.
+else; the Pluto+ backend mutes both TX channels at -89.75 dB on every
+device open and never touches TX buffers. No jamming, no injection, no
+transmissions from our equipment. Bench transmissions come only from the
+Boxer and the quads under test, props off, at legal powers.
 
 ## Reproducing
 
 Run `notebooks/01_bench_overview.ipynb` against the project venv. Without
 captures it executes top-to-bottom on clearly labeled synthetic fallback
 data (pipeline demonstration only; those numbers are not measurements).
-Capture sessions follow `docs/capture_protocol_p0.md`.
+Capture sessions follow `docs/capture_protocol_p0.md`. The O4 numbers
+come from the 2026-10-10 session: sweep plus matched-control captures
+under `data/o4_signature/` indexed in `manifest.json` (the analysis is a
+per-block pass with the same `tacet.dsp.features` API); Pluto+ setup and
+recovery procedures are in `docs/pluto_bringup.md`.
