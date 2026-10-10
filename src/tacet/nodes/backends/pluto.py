@@ -22,9 +22,14 @@ warm-up); each subsequent read is timed via the ``pluto._clock`` seam
 (default ``time.monotonic``); the first measured window is dropped as
 jitter and the achieved rate is estimated over the remaining >= 3
 windows. Below 90% of the requested rate, mono scenarios ABORT with a
-ValueError (zero-orphan: nothing has been written yet) while dual
-scenarios WARN and record the achieved rate in the sidecar and, via
-``notes_warn``, in the entry's operator_notes.
+ValueError (zero-orphan: nothing has been written yet; the front-end
+turns it into ``error: ...`` + exit code 2) while dual scenarios WARN
+and record the achieved rate in the sidecar and, via ``notes_warn``,
+in the entry's operator_notes.
+
+Sidecars: the Pluto+ backend writes one JSON sidecar per capture
+(``<base>.json`` with the rate-guard evidence and sha256s); hackrf's
+sidecars are plain-text ``.log`` files — different formats by design.
 
 Zero-orphan: on any failure (device error, KeyboardInterrupt, channel
 write error) the capture's FULL file set — channel files plus sidecar —
@@ -74,19 +79,25 @@ SCENARIOS = {
 }
 
 # Scenario-defined configuration: sample rate, RX channel count, protocol,
-# purpose, and the rf_chain note that goes into operator_notes.
+# purpose, duration envelope, and the rf_chain note that goes into
+# operator_notes. o4-capture is capped at 60 s: it accumulates in RAM at
+# 20 Msps mono (complex64 = 8 B/sample -> ~9.6 GB at 60 s); the 660 s
+# envelope is for the 2.56 Msps coherence/control scenarios.
 SCENARIO_CONFIG = {
     "coherence-cal": {
         "rate": 2_560_000, "dual": True, "protocol": "fm_carrier",
         "purpose": "coherence_cal", "rf_chain": "rx1+rx2 coherent dual",
+        "max_duration_s": 660.0,
     },
     "o4-capture": {
         "rate": 20_000_000, "dual": False, "protocol": "dji_o4",
         "purpose": "signature_capture", "rf_chain": "rx1",
+        "max_duration_s": 60.0,
     },
     "control": {
         "rate": 2_560_000, "dual": False, "protocol": "noise",
         "purpose": "signature_capture", "rf_chain": "rx1",
+        "max_duration_s": 660.0,
     },
 }
 
@@ -120,9 +131,11 @@ def _make_device(uri: str):
 def validate(args) -> None:
     """Validate parsed CLI args against the Pluto+ envelopes.
 
-    Envelope: 70-6000 MHz, duration 1-660 s, gain 0-74.5 dB (continuous,
-    no step sizes). Raises ValueError with a user-facing message; the
-    front-end turns it into exit code 2 before anything is touched.
+    Envelope: 70-6000 MHz, gain 0-74.5 dB (continuous, no step sizes),
+    duration 1 s up to the scenario's cap (60 s for the in-RAM 20 Msps
+    mono o4-capture, 660 s for the 2.56 Msps scenarios). Raises
+    ValueError with a user-facing message; the front-end turns it into
+    exit code 2 before anything is touched.
     """
     if getattr(args, "scan_fm", False) and args.freq_mhz is not None:
         raise ValueError(
@@ -130,9 +143,10 @@ def validate(args) -> None:
     if args.freq_mhz is not None and not 70 <= args.freq_mhz <= 6000:
         raise ValueError(
             f"--freq-mhz must be within 70-6000 MHz, got {args.freq_mhz}")
-    if not 1.0 <= args.duration_s <= 660.0:
-        raise ValueError(
-            f"--duration-s must be 1-660 for pluto, got {args.duration_s}")
+    limit = SCENARIO_CONFIG[args.scenario]["max_duration_s"]
+    if not 1.0 <= args.duration_s <= limit:
+        raise ValueError(f"--duration-s must be 1-{limit:g} s for "
+                         f"{args.scenario}, got {args.duration_s}")
     if (args.lna, args.vga) != (32, 32):
         raise ValueError(
             "--lna/--vga are HackRF flags; set the Pluto+ gain with "
@@ -198,7 +212,6 @@ def open_pluto(uri: str, center_hz: float, gain_db: float, sample_rate: int,
     sdr.rx_enabled_channels = channels
     sdr.rx_buffer_size = buffer_size
     sdr._rxadc.set_kernel_buffers_count(1)
-    assert sdr.rx_enabled_channels in ([0], [0, 1])
     return sdr
 
 
@@ -397,10 +410,18 @@ def capture_once(ns, session_dir: Path, index: int) -> dict | None:
 
 
 def fm_scan_bins() -> list:
-    """FM broadcast scan bins: 88-108 MHz in 200 kHz steps."""
+    """FM broadcast scan bins: 88-108 MHz in 200 kHz steps.
+
+    Exclusive at 108 MHz: band_for_freq_hz maps [87.5, 108) so a
+    108.0 MHz winner would have no band (and would fail inside
+    entry_parts, after the files were written).
+    """
     lo, hi = SCAN_SPAN_MHZ
     count = int(round((hi - lo) / SCAN_STEP_MHZ))
-    return [round(lo + i * SCAN_STEP_MHZ, 6) for i in range(count + 1)]
+    # Exclusive at hi: band_for_freq_hz maps [87.5, 108), so a 108.0 MHz
+    # winner would have no band (and would fail inside entry_parts, after
+    # the files were written). tests pin bins[-1] < hi.
+    return [round(lo + i * SCAN_STEP_MHZ, 6) for i in range(count)]
 
 
 def fm_scan(ns, session_dir: Path):

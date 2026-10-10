@@ -322,6 +322,14 @@ def main(argv=None) -> int:
                       file=sys.stderr)
                 return 2
             args.freq_mhz = float(winner)
+            # Backend-agnostic defense: a scan winner outside every mapped
+            # band must fail BEFORE the capture begins (zero files).
+            try:
+                band_for_freq_mhz(args.freq_mhz)
+            except ValueError as exc:
+                _prune_empty_dirs(session_dir)
+                print(f"error: {exc}", file=sys.stderr)
+                return 2
         parts = backend.capture_once(args, session_dir, 0)
         if parts is None:
             _prune_empty_dirs(session_dir)  # backend removed its files
@@ -344,6 +352,13 @@ def main(argv=None) -> int:
             return 2
         print(f"captured {parts['channels'][0]['path']} "
               f"({parts['size_bytes']} bytes){parts['notes_warn']}")
+    except ValueError as exc:
+        # Deliberate backend aborts (e.g. the pluto mono rate guard):
+        # house error + exit 2, never a traceback. The backend already
+        # removed its files (zero-orphan); prune the empty session dirs.
+        _prune_empty_dirs(session_dir)
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     except KeyboardInterrupt:
         # backends already removed their partial files; prune empty dirs
         _prune_empty_dirs(session_dir)

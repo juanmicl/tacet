@@ -273,10 +273,10 @@ def test_open_pluto_write_order():
 # --- 3. Validator envelope ----------------------------------------------------
 
 
-def _ns(freq_mhz, duration_s, gain_db):
+def _ns(freq_mhz, duration_s, gain_db, scenario="o4-capture"):
     return SimpleNamespace(freq_mhz=freq_mhz, duration_s=duration_s,
                            gain_db=gain_db, lna=32, vga=32,
-                           scenario="o4-capture", scan_fm=False)
+                           scenario=scenario, scan_fm=False)
 
 
 def test_validate_envelope_pluto():
@@ -288,12 +288,18 @@ def test_validate_envelope_pluto():
             raise AssertionError(f"must reject freq {bad.freq_mhz}")
         except ValueError:
             pass
-    pluto.validate(_ns(98.5, 660.0, 40.0))     # 660 s: pass
-    try:
-        pluto.validate(_ns(98.5, 661.0, 40.0))
-        raise AssertionError("must reject 661 s")
-    except ValueError:
-        pass
+    # Duration caps are per scenario: the 20 Msps mono o4-capture is RAM
+    # bound (60 s), the 2.56 Msps scenarios run to 660 s.
+    pluto.validate(_ns(98.5, 660.0, 40.0, scenario="coherence-cal"))
+    pluto.validate(_ns(5800, 60.0, 40.0))      # o4-capture at its cap: pass
+    for bad in [_ns(98.5, 661.0, 40.0, scenario="coherence-cal"),
+                _ns(5800, 60.1, 40.0)]:
+        try:
+            pluto.validate(bad)
+            raise AssertionError(f"must reject duration {bad.duration_s} "
+                                 f"for {bad.scenario}")
+        except ValueError:
+            pass
     for bad in [_ns(98.5, 5.0, -1.0), _ns(98.5, 5.0, 74.6)]:
         try:
             pluto.validate(bad)
@@ -406,6 +412,25 @@ def test_mono_rate_shortfall_aborts_zero_orphan():
         assert not Path("manifest.json").exists()
 
 
+def test_mono_rate_shortfall_clean_error_through_main():
+    # The deliberate rate-guard ValueError must surface as the house
+    # `error: ...` + rc 2 through capture.main — never a traceback.
+    slow = BUF_MONO / (0.5 * MONO_RATE)
+    n_reads = max(4, math.ceil(MONO_RATE * 1.0 / BUF_MONO))  # duration 1 s
+    with _pluto_ctx(rx_fn=mono_rx_fn(),
+                    clock=window_clock([slow] * n_reads)):
+        rc, out, err = _run_main(
+            ["o4-capture", "--device", "pluto", "--freq-mhz", "5800",
+             "--gain-db", "30", "--label", "dji_o4",
+             "--condition", "bench", "--duration-s", "1"])
+        assert rc == 2
+        assert "error:" in err
+        assert "rate guard" in err
+        assert "Traceback" not in err
+        assert list(Path("data").rglob("*")) == []
+        assert not Path("manifest.json").exists()
+
+
 def test_dual_rate_shortfall_warns_not_aborts():
     # Dual at 80%: capture completes; the sidecar records the achieved
     # rate and a rate warning lands in operator_notes.
@@ -429,13 +454,23 @@ def test_dual_rate_shortfall_warns_not_aborts():
 
 
 def test_scan_fm_picks_strongest():
-    powers = {98.0: 1.0, 98.2: 4.0, 98.4: 9.0}      # true winner: 98.4
+    # The scan range must stop short of 108 MHz (band map is exclusive
+    # there): a 108.0 winner would raise inside entry_parts AFTER the
+    # files were written.
+    bins = pluto.fm_scan_bins()
+    assert bins[0] == 88.0 and bins[-1] < 108.0
+    # Scripted steady powers with the LARGEST transient parked on a
+    # NON-winner bin: without the 0.1 s settle discard the transient bin
+    # (98.0) flips the winner and this test FAILS; with it, the steady
+    # winner (98.2) must come through.
+    powers = {98.0: 4.0, 98.2: 9.0, 98.4: 1.0}      # steady winner: 98.2
+    transients = {98.0: 1e6, 98.2: 1.0, 98.4: 1.0}  # peak transient: 98.0
     settle = int(0.1 * DUAL_RATE)
 
     def rx_fn(sdr):
         mhz = round(sdr.rx_lo / 1e6, 6)
         z = np.zeros(BUF_DUAL, dtype=np.complex64)
-        z[:settle] = 1e6 + 1e6j                     # huge leading transient
+        z[:settle] = transients[mhz] * (1 + 1j)     # leading transient
         z[settle:] = math.sqrt(powers[mhz]) * (1 + 0j)
         return [z, z.copy()]
 
@@ -447,13 +482,13 @@ def test_scan_fm_picks_strongest():
         assert rc == 0
         doc = json.loads(Path("manifest.json").read_text(encoding="utf-8"))
         entry = doc["recordings"][0]
-        assert entry["center_freq_hz"] == 98.4e6    # scripted winner...
+        assert entry["center_freq_hz"] == 98.2e6    # steady winner...
         assert entry["band"] == "VHF FM broadcast"
         # ...and the winner became rx_lo on the capture device (the last
         # fake the factory built is the capture-phase device).
         last = ctx.made[-1]
         lo_writes = [v for n, v in last._writes if n == "rx_lo"]
-        assert lo_writes[-1] == 98_400_000
+        assert lo_writes[-1] == 98_200_000
         # No scan dwell artifacts: only the two channel files + sidecar.
         files = sorted(p.name for p in Path("data").rglob("*") if p.is_file())
         assert files == ["coherence-cal_000.json",
